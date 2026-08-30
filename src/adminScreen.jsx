@@ -25,20 +25,12 @@ const db = getFirestore(app);
 const AdminLogin = ({ onLogin }) => {
     const [loading, setLoading] = useState(false);
 
-    const ADMIN_EMAILS = ['shatrixx6@gmail.com', 'amankumar2005sept@gmail.com', 'aman11sep2020@gmail.com', 'ansari.sdn53@gmail.com'];
-
     const handleGoogleLogin = async () => {
         setLoading(true);
         try {
             const provider = new GoogleAuthProvider();
             const result = await signInWithPopup(auth, provider);
-
-            if (ADMIN_EMAILS.includes(result.user.email)) {
-                onLogin(result.user);
-            } else {
-                await signOut(auth);
-                alert('Access Denied! Only admins can access this panel.');
-            }
+            onLogin(result.user);
         } catch (error) {
             console.error('Login error:', error);
             alert('Login failed. Please try again.');
@@ -129,10 +121,10 @@ const AdminLogin = ({ onLogin }) => {
                     </button>
                 </div>
 
-                <div className="mt-6 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                    <p className="text-xs text-amber-800 text-center font-medium flex items-center justify-center gap-1.5">
-                        <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                        Restricted: Authorized Admin Emails Only
+                <div className="mt-6 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                    <p className="text-xs text-slate-600 text-center font-medium flex items-center justify-center gap-1.5">
+                        <ShieldCheck className="w-4 h-4 text-[#4169e2] shrink-0" />
+                        Admin Access Enabled for All Accounts
                     </p>
                 </div>
             </div>
