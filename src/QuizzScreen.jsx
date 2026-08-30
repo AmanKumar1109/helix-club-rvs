@@ -366,14 +366,12 @@ const QuizList = ({ user, onStartQuiz, onLogout }) => {
         onStartQuiz(quiz);
     };
 
-    // Color theme cycling for aesthetic pastel cards
+    // Color theme cycling for aesthetic cards matching #4169e2 light palette
     const cardThemes = [
-        { bg: 'bg-[#fff7f0]', border: 'border-[#ffdecb]', badge: 'bg-orange-100 text-orange-800', tag: 'bg-white/95 text-orange-950', dot: 'bg-orange-400' },
-        { bg: 'bg-[#f0fbf6]', border: 'border-[#cbf3e1]', badge: 'bg-emerald-100 text-emerald-800', tag: 'bg-white/95 text-emerald-950', dot: 'bg-emerald-400' },
-        { bg: 'bg-[#f6f2ff]', border: 'border-[#e4dcfe]', badge: 'bg-purple-100 text-purple-800', tag: 'bg-white/95 text-purple-950', dot: 'bg-purple-400' },
-        { bg: 'bg-[#f0f7ff]', border: 'border-[#cde5ff]', badge: 'bg-blue-100 text-blue-800', tag: 'bg-white/95 text-blue-950', dot: 'bg-blue-400' },
-        { bg: 'bg-[#fff2f7]', border: 'border-[#fedbe9]', badge: 'bg-pink-100 text-pink-800', tag: 'bg-white/95 text-pink-950', dot: 'bg-pink-400' },
-        { bg: 'bg-[#fefce8]', border: 'border-[#fef08a]', badge: 'bg-amber-100 text-amber-800', tag: 'bg-white/95 text-amber-950', dot: 'bg-amber-400' }
+        { bg: 'bg-[#f0f6ff]', border: 'border-[#cde2fe]', badge: 'bg-blue-100 text-blue-800', tag: 'bg-white/95 text-blue-950', dot: 'bg-[#4169e2]' },
+        { bg: 'bg-[#ebf4ff]', border: 'border-[#c4dcfe]', badge: 'bg-sky-100 text-sky-800', tag: 'bg-white/95 text-sky-950', dot: 'bg-sky-500' },
+        { bg: 'bg-[#f3f7ff]', border: 'border-[#d4e5fe]', badge: 'bg-indigo-100 text-indigo-800', tag: 'bg-white/95 text-indigo-950', dot: 'bg-indigo-500' },
+        { bg: 'bg-[#eef6ff]', border: 'border-[#cde5ff]', badge: 'bg-blue-100 text-blue-800', tag: 'bg-white/95 text-blue-950', dot: 'bg-[#4169e2]' }
     ];
 
     // Filter & Sort Logic
