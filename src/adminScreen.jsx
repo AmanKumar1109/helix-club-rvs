@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
-import { Clock, LogOut, AlertCircle, Trophy, User, Hash, Award, Timer, TrendingUp, Users, Activity, Plus, Eye, BarChart3, Target, Edit2, Save, X, Filter, ShieldCheck } from 'lucide-react';
+import { Clock, LogOut, AlertCircle, Trophy, User, Hash, Award, Timer, TrendingUp, Users, Activity, Plus, Eye, BarChart3, Target, Edit2, Save, X, Filter, ShieldCheck, Search, Mail } from 'lucide-react';
 import logoImg from './assets/logo.png';
 
 // Firebase Configuration
@@ -458,47 +458,169 @@ const CreateQuizTab = ({ onQuizCreated, adminUser }) => {
     );
 };
 
-// Activity Logs Tab
+// Activity Logs Tab (Full Search by Name, Email, Roll No, Quiz ID & Action)
 const ActivityLogsTab = ({ logs }) => {
+    const [searchQuery, setSearchQuery] = useState('');
+    const [actionFilter, setActionFilter] = useState('all');
+
+    // Filter logs by student name, email, roll number, quiz id, or action
+    const filteredLogs = logs.filter(log => {
+        const query = searchQuery.toLowerCase().trim();
+        const matchesSearch = !query || (
+            log.userName?.toLowerCase().includes(query) ||
+            log.userEmail?.toLowerCase().includes(query) ||
+            log.email?.toLowerCase().includes(query) ||
+            log.rollNumber?.toLowerCase().includes(query) ||
+            log.quizId?.toLowerCase().includes(query) ||
+            log.action?.toLowerCase().includes(query)
+        );
+
+        const matchesAction = actionFilter === 'all' || log.action === actionFilter;
+        return matchesSearch && matchesAction;
+    });
+
+    const uniqueActions = Array.from(new Set(logs.map(l => l.action).filter(Boolean)));
+
     return (
-        <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                    <Activity className="w-6 h-6 text-red-600" />
-                    Real-time Activity Logs
-                </h2>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                    Live Monitoring
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
+            {/* Header with Live Indicator & Counts */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-200">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center text-red-600">
+                        <Activity className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-slate-900 leading-tight">
+                            Real-time Activity & Anti-Cheat Logs
+                        </h2>
+                        <p className="text-xs text-slate-500 font-medium">
+                            Showing {filteredLogs.length} of {logs.length} total logs (All records loaded)
+                        </p>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50 border border-red-200 rounded-xl self-start sm:self-auto shadow-2xs">
+                    <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse"></div>
+                    <span className="text-xs font-bold text-red-700 uppercase tracking-wider">Live Monitoring Active</span>
                 </div>
             </div>
 
-            <div className="space-y-3 max-h-150 overflow-y-auto">
+            {/* Search and Action Filter Toolbar */}
+            <div className="flex flex-col md:flex-row gap-3">
+                {/* Search Bar */}
+                <div className="relative flex-1">
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search by student name, roll number, email, or quiz ID..."
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-10 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#4169e2] focus:bg-white shadow-2xs transition-all"
+                    />
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                    {searchQuery && (
+                        <button
+                            onClick={() => setSearchQuery('')}
+                            className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 p-0.5 rounded-full hover:bg-slate-200 cursor-pointer"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    )}
+                </div>
+
+                {/* Action Filter */}
+                <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4 text-slate-400 shrink-0" />
+                    <select
+                        value={actionFilter}
+                        onChange={(e) => setActionFilter(e.target.value)}
+                        className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#4169e2] focus:bg-white shadow-2xs cursor-pointer"
+                    >
+                        <option value="all">All Violations ({logs.length})</option>
+                        {uniqueActions.map((action, i) => (
+                            <option key={i} value={action}>{action}</option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+
+            {/* Logs List Area */}
+            <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
                 {logs.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500">
-                        <Activity className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                        <p>No suspicious activity detected</p>
+                    <div className="text-center py-16 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                        <Activity className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                        <p className="text-base font-bold text-slate-700">No Activity Logs Found</p>
+                        <p className="text-xs text-slate-400 mt-1">No suspicious activity or violation logs have been recorded yet.</p>
+                    </div>
+                ) : filteredLogs.length === 0 ? (
+                    <div className="text-center py-14 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                        <Search className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+                        <p className="text-sm font-bold text-slate-700">No matching logs found</p>
+                        <p className="text-xs text-slate-400 mt-1">Try searching with a different student name, roll number, email, or reset filters.</p>
+                        <button
+                            onClick={() => { setSearchQuery(''); setActionFilter('all'); }}
+                            className="mt-3 px-4 py-1.5 bg-[#4169e2] text-white rounded-xl text-xs font-bold shadow-xs hover:bg-blue-600 transition-colors cursor-pointer"
+                        >
+                            Reset Search
+                        </button>
                     </div>
                 ) : (
-                    logs.map((log) => (
-                        <div key={log.id} className="border-l-4 border-red-500 bg-red-50 p-4 rounded-lg hover:bg-red-100 transition-colors">
-                            <div className="flex items-start gap-3">
-                                <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-                                <div className="flex-1">
-                                    <div className="flex items-center justify-between mb-1">
-                                        <p className="font-bold text-gray-900">
-                                            {log.userName} ({log.rollNumber})
-                                        </p>
-                                        <span className="text-xs text-gray-500">
-                                            {log.timestamp?.toDate?.()?.toLocaleTimeString() || 'Just now'}
-                                        </span>
+                    filteredLogs.map((log) => {
+                        const dateObj = log.timestamp?.toDate ? log.timestamp.toDate() : (log.timestamp ? new Date(log.timestamp) : null);
+                        const timeStr = dateObj ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'Just now';
+                        const dateStr = dateObj ? dateObj.toLocaleDateString() : '';
+
+                        return (
+                            <div
+                                key={log.id}
+                                className="border border-red-200/80 bg-red-50/50 hover:bg-red-50 p-4 rounded-2xl transition-all duration-200 shadow-2xs"
+                            >
+                                <div className="flex items-start gap-3.5">
+                                    <div className="w-9 h-9 rounded-xl bg-red-100 border border-red-200 flex items-center justify-center text-red-600 shrink-0 mt-0.5 shadow-2xs">
+                                        <AlertCircle className="w-5 h-5" />
                                     </div>
-                                    <p className="text-sm text-red-700 font-medium">{log.action}</p>
-                                    <p className="text-xs text-gray-600 mt-1">Quiz: {log.quizId}</p>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <span className="font-extrabold text-sm text-slate-900">
+                                                    {log.userName || 'Anonymous Student'}
+                                                </span>
+                                                <span className="px-2 py-0.5 bg-slate-200/80 text-slate-700 font-mono text-xs font-bold rounded-lg">
+                                                    {log.rollNumber || 'No Roll'}
+                                                </span>
+                                                {(log.userEmail || log.email) && (
+                                                    <span className="inline-flex items-center gap-1 text-xs text-slate-500 font-medium">
+                                                        <Mail className="w-3 h-3 text-slate-400" />
+                                                        {log.userEmail || log.email}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="text-right shrink-0">
+                                                <span className="text-xs font-bold text-red-700 bg-red-100/80 px-2 py-0.5 rounded-md">
+                                                    {timeStr}
+                                                </span>
+                                                {dateStr && (
+                                                    <span className="text-[10px] text-slate-400 block sm:inline sm:ml-2">
+                                                        {dateStr}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-wrap items-center gap-2 mt-2">
+                                            <span className="px-2.5 py-1 bg-red-100 text-red-800 rounded-lg text-xs font-bold border border-red-200/80">
+                                                ⚠️ {log.action}
+                                            </span>
+                                            {log.quizId && (
+                                                <span className="px-2.5 py-1 bg-white text-slate-700 rounded-lg text-xs font-semibold border border-slate-200">
+                                                    Quiz ID: {log.quizId}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))
+                        );
+                    })
                 )}
             </div>
         </div>
@@ -734,7 +856,7 @@ const AdminDashboard = ({ adminUser, onLogout }) => {
         try {
             const logsQuery = query(collection(db, 'activityLogs'), orderBy('timestamp', 'desc'));
             const logsSnapshot = await getDocs(logsQuery);
-            const logsData = logsSnapshot.docs.slice(0, 50).map(doc => ({
+            const logsData = logsSnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));

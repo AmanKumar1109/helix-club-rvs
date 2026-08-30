@@ -29,8 +29,9 @@ const useAntiCheat = (user, quizId, isQuizActive) => {
             try {
                 await addDoc(collection(db, 'activityLogs'), {
                     userId: user.uid,
-                    userName: user.displayName,
-                    rollNumber: user.rollNumber,
+                    userName: user.fullName || user.displayName || 'Student',
+                    userEmail: user.email || '',
+                    rollNumber: user.rollNumber || 'N/A',
                     action,
                     quizId,
                     timestamp: serverTimestamp()
