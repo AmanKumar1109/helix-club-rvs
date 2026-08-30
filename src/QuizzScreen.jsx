@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, query, where, serverTimestamp } from 'firebase/firestore';
@@ -306,7 +307,8 @@ const UserDetails = ({ user, onComplete }) => {
 };
 
 // Quiz List Component (Matching Login Screen Aesthetic)
-const QuizList = ({ user, onStartQuiz, onLogout }) => {
+const QuizList = ({ user, onLogout }) => {
+    const navigate = useNavigate();
     const [quizzes, setQuizzes] = useState([]);
     const [submissions, setSubmissions] = useState({});
     const [loading, setLoading] = useState(true);
@@ -354,7 +356,7 @@ const QuizList = ({ user, onStartQuiz, onLogout }) => {
             alert('You have already submitted this quiz!');
             return;
         }
-        onStartQuiz(quiz);
+        navigate(`/quiz/${quiz.id}`);
     };
 
     // Color theme cycling for aesthetic cards matching #4169e2 light palette
@@ -1065,12 +1067,191 @@ const Result = ({ score, totalQuestions, totalMarks, correct, wrong, notAttempte
     );
 };
 
-// Main App Component
+// Dedicated Quiz Taking Screen Component for Route: /quiz/:quizId
+export const QuizTakeScreen = () => {
+    const { quizId } = useParams();
+    const navigate = useNavigate();
+    const [user, setUser] = useState(null);
+    const [userDetails, setUserDetails] = useState(null);
+    const [quiz, setQuiz] = useState(null);
+    const [quizResult, setQuizResult] = useState(null);
+    const [alreadySubmitted, setAlreadySubmitted] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+            if (firebaseUser) {
+                try {
+                    const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+                    if (userDoc.exists()) {
+                        const userData = userDoc.data();
+                        setUserDetails({
+                            ...firebaseUser,
+                            fullName: userData.fullName,
+                            rollNumber: userData.rollNumber
+                        });
+                    } else {
+                        setUser(firebaseUser);
+                    }
+                } catch (err) {
+                    console.error('Error fetching user details:', err);
+                }
+            } else {
+                setUser(null);
+                setUserDetails(null);
+            }
+        });
+
+        return () => unsubscribe();
+    }, []);
+
+    useEffect(() => {
+        const fetchQuizAndSubmission = async () => {
+            if (!quizId) return;
+            try {
+                setLoading(true);
+                const quizDoc = await getDoc(doc(db, 'quizzes', quizId));
+                if (quizDoc.exists()) {
+                    setQuiz({ id: quizDoc.id, ...quizDoc.data() });
+                } else {
+                    setError('Quiz not found or it may have been removed.');
+                }
+
+                if (auth.currentUser) {
+                    const subQuery = query(
+                        collection(db, 'submissions'),
+                        where('userId', '==', auth.currentUser.uid),
+                        where('quizId', '==', quizId)
+                    );
+                    const subSnap = await getDocs(subQuery);
+                    if (!subSnap.empty) {
+                        setAlreadySubmitted(subSnap.docs[0].data());
+                    }
+                }
+            } catch (err) {
+                console.error('Error loading quiz:', err);
+                setError('Failed to load quiz details.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchQuizAndSubmission();
+    }, [quizId, userDetails]);
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
+                <div className="text-center">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#4169e2] border-t-transparent"></div>
+                    <p className="mt-4 text-sm font-bold text-slate-600">Loading Assessment Question Paper...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!user && !userDetails) {
+        return <Login onLogin={setUser} />;
+    }
+
+    if (user && !userDetails) {
+        return <UserDetails user={user} onComplete={setUserDetails} />;
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-screen bg-[#f8fafc] flex flex-col justify-between items-center p-4">
+                <div className="w-full h-2"></div>
+                <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-[0_20px_50px_rgba(8,_112,_184,_0.08)] border border-slate-100 my-auto">
+                    <div className="w-16 h-16 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <XCircle className="w-8 h-8" />
+                    </div>
+                    <h2 className="text-xl font-bold text-slate-900 mb-2">Quiz Not Found</h2>
+                    <p className="text-xs text-slate-500 mb-6">{error}</p>
+                    <button
+                        onClick={() => navigate('/')}
+                        className="w-full py-3.5 bg-[#4169e2] hover:bg-[#3557c5] text-white rounded-2xl font-bold text-sm shadow-md shadow-blue-500/20 transition-all cursor-pointer"
+                    >
+                        ← Back to All Quizzes
+                    </button>
+                </div>
+                <footer className="py-4 text-center text-sm font-medium text-slate-500">
+                    made by{' '}
+                    <a href="https://zectral.vercel.app/" target="_blank" rel="noopener noreferrer" className="font-bold text-[#4169e2] underline">
+                        ZECTRAL
+                    </a>
+                </footer>
+            </div>
+        );
+    }
+
+    if (alreadySubmitted && !quizResult) {
+        return (
+            <div className="min-h-screen bg-[#f8fafc] flex flex-col justify-between items-center p-4">
+                <div className="w-full h-2"></div>
+                <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-[0_20px_50px_rgba(8,_112,_184,_0.08)] border border-slate-100 my-auto">
+                    <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <CheckCircle className="w-8 h-8" />
+                    </div>
+                    <h2 className="text-xl font-bold text-slate-900 mb-1">Already Submitted!</h2>
+                    <p className="text-xs text-slate-400 mb-6">You have already completed this test.</p>
+
+                    <div className="bg-slate-50 p-5 rounded-2xl mb-6 border border-slate-100">
+                        <div className="text-3xl font-black text-[#4169e2] mb-1">{alreadySubmitted.score}</div>
+                        <div className="text-xs font-semibold text-slate-500">
+                            out of {alreadySubmitted.totalMarks || (alreadySubmitted.totalQuestions * 4)} marks
+                        </div>
+                    </div>
+
+                    <button
+                        onClick={() => navigate('/')}
+                        className="w-full py-3.5 bg-[#4169e2] hover:bg-[#3557c5] text-white rounded-2xl font-bold text-sm shadow-md shadow-blue-500/20 transition-all cursor-pointer"
+                    >
+                        ← Back to Quiz Dashboard
+                    </button>
+                </div>
+                <footer className="py-4 text-center text-sm font-medium text-slate-500">
+                    made by{' '}
+                    <a href="https://zectral.vercel.app/" target="_blank" rel="noopener noreferrer" className="font-bold text-[#4169e2] underline">
+                        ZECTRAL
+                    </a>
+                </footer>
+            </div>
+        );
+    }
+
+    if (quizResult) {
+        return (
+            <Result
+                score={quizResult.score}
+                totalQuestions={quizResult.totalQuestions}
+                totalMarks={quizResult.totalMarks}
+                correct={quizResult.correct}
+                wrong={quizResult.wrong}
+                notAttempted={quizResult.notAttempted}
+                onBackToList={() => navigate('/')}
+            />
+        );
+    }
+
+    if (quiz) {
+        return (
+            <Quiz
+                user={userDetails}
+                quiz={quiz}
+                onComplete={(result) => setQuizResult(result)}
+            />
+        );
+    }
+
+    return null;
+};
+
+// Main App Component for Route: /
 export default function QuizzApp() {
     const [user, setUser] = useState(null);
     const [userDetails, setUserDetails] = useState(null);
-    const [currentQuiz, setCurrentQuiz] = useState(null);
-    const [quizResult, setQuizResult] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -1106,26 +1287,9 @@ export default function QuizzApp() {
             await signOut(auth);
             setUser(null);
             setUserDetails(null);
-            setCurrentQuiz(null);
-            setQuizResult(null);
         } catch (error) {
             console.error('Logout error:', error);
         }
-    };
-
-    const handleStartQuiz = (quiz) => {
-        setCurrentQuiz(quiz);
-        setQuizResult(null);
-    };
-
-    const handleQuizComplete = (result) => {
-        setQuizResult(result);
-        setCurrentQuiz(null);
-    };
-
-    const handleBackToList = () => {
-        setQuizResult(null);
-        setCurrentQuiz(null);
     };
 
     if (loading) {
@@ -1147,28 +1311,9 @@ export default function QuizzApp() {
         return <UserDetails user={user} onComplete={setUserDetails} />;
     }
 
-    if (quizResult) {
-        return (
-            <Result
-                score={quizResult.score}
-                totalQuestions={quizResult.totalQuestions}
-                totalMarks={quizResult.totalMarks}
-                correct={quizResult.correct}
-                wrong={quizResult.wrong}
-                notAttempted={quizResult.notAttempted}
-                onBackToList={handleBackToList}
-            />
-        );
-    }
-
-    if (currentQuiz) {
-        return <Quiz user={userDetails} quiz={currentQuiz} onComplete={handleQuizComplete} />;
-    }
-
     return (
         <QuizList
             user={userDetails}
-            onStartQuiz={handleStartQuiz}
             onLogout={handleLogout}
         />
     );
