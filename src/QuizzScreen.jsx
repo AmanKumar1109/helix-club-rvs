@@ -100,6 +100,7 @@ const useQuizTimer = (duration, onTimeUp, isActive) => {
 const Login = ({ onLogin }) => {
     const [loading, setLoading] = useState(false);
     const cardRef = useRef(null);
+    const logoRef = useRef(null);
 
     useEffect(() => {
         if (cardRef.current) {
@@ -117,6 +118,25 @@ const Login = ({ onLogin }) => {
             yoyo: true,
             ease: 'sine.inOut'
         });
+        // Pulsing glow rings around logo
+        gsap.to('.login-logo-ring', {
+            scale: 1.35,
+            opacity: 0,
+            duration: 1.8,
+            repeat: -1,
+            ease: 'power1.out',
+            stagger: 0.6
+        });
+        // Animated card gradient border
+        gsap.to('.login-card-border', {
+            backgroundPosition: '200% center',
+            duration: 4,
+            repeat: -1,
+            ease: 'none'
+        });
+        // Spinning orbit rings
+        gsap.to('.orbit-ring-1', { rotation: 360, duration: 12, repeat: -1, ease: 'none', transformOrigin: 'center center' });
+        gsap.to('.orbit-ring-2', { rotation: -360, duration: 18, repeat: -1, ease: 'none', transformOrigin: 'center center' });
     }, []);
 
     const handleGoogleLogin = async () => {
@@ -164,13 +184,23 @@ const Login = ({ onLogin }) => {
             <div className="w-full h-2"></div>
 
             {/* Center Modern Dark Login Card */}
-            <div ref={cardRef} className="w-full max-w-md bg-[#131b2e]/90 backdrop-blur-xl rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-slate-800 p-8 sm:p-10 relative z-10 my-auto text-center transition-all">
-                {/* Helix Logo */}
-                <div className="flex justify-center mb-4">
+            <div className="relative z-10 my-auto w-full max-w-md">
+                {/* Animated gradient border wrapper */}
+                <div className="login-card-border absolute inset-0 rounded-3xl p-[1.5px] bg-gradient-to-r from-blue-600 via-indigo-400 to-blue-600 bg-[length:200%_auto] opacity-60" style={{background: 'linear-gradient(90deg,#4169e2,#818cf8,#4169e2)', backgroundSize: '200% auto'}}></div>
+                <div ref={cardRef} className="relative bg-[#0e1524]/95 backdrop-blur-xl rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.7)] p-8 sm:p-10 text-center transition-all">
+                {/* Helix Logo with pulsing rings */}
+                <div className="flex justify-center mb-4 relative">
+                    {/* Pulsing glow rings */}
+                    <div className="login-logo-ring absolute inset-0 m-auto w-20 h-20 rounded-full border-2 border-blue-500/50"></div>
+                    <div className="login-logo-ring absolute inset-0 m-auto w-20 h-20 rounded-full border-2 border-indigo-500/40" style={{animationDelay: '0.6s'}}></div>
+                    {/* Orbit rings */}
+                    <div className="orbit-ring-1 absolute inset-0 m-auto w-28 h-28 rounded-full border border-dashed border-blue-500/20"></div>
+                    <div className="orbit-ring-2 absolute inset-0 m-auto w-36 h-36 rounded-full border border-dashed border-indigo-500/15"></div>
                     <img
+                        ref={logoRef}
                         src={logoImg}
                         alt="Helix Logo"
-                        className="w-18 h-18 sm:w-20 sm:h-20 object-contain drop-shadow-[0_0_15px_rgba(65,105,226,0.3)] hover:scale-105 transition-transform duration-300"
+                        className="relative w-18 h-18 sm:w-20 sm:h-20 object-contain drop-shadow-[0_0_20px_rgba(65,105,226,0.6)] hover:scale-105 transition-transform duration-300 z-10"
                     />
                 </div>
 
@@ -226,6 +256,7 @@ const Login = ({ onLogin }) => {
                     <span className="flex items-center gap-1 font-medium"><ShieldCheck className="w-3.5 h-3.5 text-blue-400" /> Secure Login</span>
                     <span className="text-slate-600">•</span>
                     <span className="flex items-center gap-1 font-medium"><Sparkles className="w-3.5 h-3.5 text-amber-400" /> Anti-Cheat Active</span>
+                </div>
                 </div>
             </div>
 
@@ -486,12 +517,32 @@ const QuizList = ({ user, onLogout }) => {
         navigate(`/quiz/${quiz.id}`);
     };
 
+    // 3D tilt on mouse move for cards
+    const handleCardMouseMove = (e, cardEl) => {
+        if (!cardEl) return;
+        const rect = cardEl.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        const rotateX = ((y - centerY) / centerY) * -8;
+        const rotateY = ((x - centerX) / centerX) * 8;
+        cardEl.style.transform = `perspective(900px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.025)`;
+        cardEl.style.boxShadow = `0 20px 60px rgba(65,105,226,0.25), 0 0 0 1px rgba(65,105,226,0.4)`;
+    };
+    const handleCardMouseLeave = (cardEl) => {
+        if (!cardEl) return;
+        cardEl.style.transform = 'perspective(900px) rotateX(0deg) rotateY(0deg) scale(1)';
+        cardEl.style.boxShadow = '';
+        cardEl.style.transition = 'transform 0.4s ease, box-shadow 0.4s ease';
+    };
+
     // Color theme cycling for aesthetic dark cards matching #4169e2 dark palette
     const cardThemes = [
-        { bg: 'bg-[#131b2e]/90', border: 'border-slate-800 hover:border-blue-500/60', badge: 'bg-blue-950/80 text-blue-300 border border-blue-800/40', tag: 'bg-slate-900/90 text-blue-300 border border-slate-700/60', dot: 'bg-[#4169e2]' },
-        { bg: 'bg-[#151c33]/90', border: 'border-slate-800 hover:border-sky-500/60', badge: 'bg-sky-950/80 text-sky-300 border border-sky-800/40', tag: 'bg-slate-900/90 text-sky-300 border border-slate-700/60', dot: 'bg-sky-500' },
-        { bg: 'bg-[#161b36]/90', border: 'border-slate-800 hover:border-indigo-500/60', badge: 'bg-indigo-950/80 text-indigo-300 border border-indigo-800/40', tag: 'bg-slate-900/90 text-indigo-300 border border-slate-700/60', dot: 'bg-indigo-500' },
-        { bg: 'bg-[#141d38]/90', border: 'border-slate-800 hover:border-blue-500/60', badge: 'bg-blue-950/80 text-blue-300 border border-blue-800/40', tag: 'bg-slate-900/90 text-blue-300 border border-slate-700/60', dot: 'bg-[#4169e2]' }
+        { bg: 'bg-[#131b2e]/90', border: 'border-slate-800', badge: 'bg-blue-950/80 text-blue-300 border border-blue-800/40', tag: 'bg-slate-900/90 text-blue-300 border border-slate-700/60', dot: 'bg-[#4169e2]', glowColor: 'rgba(65,105,226,0.35)' },
+        { bg: 'bg-[#151c33]/90', border: 'border-slate-800', badge: 'bg-sky-950/80 text-sky-300 border border-sky-800/40', tag: 'bg-slate-900/90 text-sky-300 border border-slate-700/60', dot: 'bg-sky-500', glowColor: 'rgba(14,165,233,0.3)' },
+        { bg: 'bg-[#161b36]/90', border: 'border-slate-800', badge: 'bg-indigo-950/80 text-indigo-300 border border-indigo-800/40', tag: 'bg-slate-900/90 text-indigo-300 border border-slate-700/60', dot: 'bg-indigo-500', glowColor: 'rgba(99,102,241,0.3)' },
+        { bg: 'bg-[#141d38]/90', border: 'border-slate-800', badge: 'bg-blue-950/80 text-blue-300 border border-blue-800/40', tag: 'bg-slate-900/90 text-blue-300 border border-slate-700/60', dot: 'bg-[#4169e2]', glowColor: 'rgba(65,105,226,0.35)' }
     ];
 
     // Filter & Sort Logic
@@ -766,7 +817,10 @@ const QuizList = ({ user, onLogout }) => {
                                     return (
                                         <div
                                             key={quiz.id}
-                                            className={`gsap-quiz-card ${theme.bg} ${theme.border} border rounded-3xl p-5 sm:p-6 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_12px_35px_rgba(65,105,226,0.18)] flex flex-col justify-between relative shadow-[0_4px_20px_rgba(0,0,0,0.3)] backdrop-blur-md`}
+                                            className={`gsap-quiz-card ${theme.bg} ${theme.border} border rounded-3xl p-5 sm:p-6 flex flex-col justify-between relative shadow-[0_4px_20px_rgba(0,0,0,0.3)] backdrop-blur-md`}
+                                            style={{ transition: 'transform 0.15s ease, box-shadow 0.15s ease', willChange: 'transform' }}
+                                            onMouseMove={(e) => handleCardMouseMove(e, e.currentTarget)}
+                                            onMouseLeave={(e) => handleCardMouseLeave(e.currentTarget)}
                                         >
                                             <div>
                                                 {/* Top Tag & Bookmark */}
@@ -1053,7 +1107,22 @@ const Quiz = ({ user, quiz, onComplete }) => {
                     </div>
                 </div>
 
-                <div className="max-w-5xl mx-auto px-4 py-8">
+                {/* Question Progress Bar */}
+                <div className="w-full h-1 bg-slate-800/80">
+                    <div
+                        className="h-full bg-gradient-to-r from-[#4169e2] to-indigo-400 transition-all duration-500 ease-out relative overflow-hidden"
+                        style={{ width: `${((currentQuestion + 1) / quiz.questions.length) * 100}%` }}
+                    >
+                        <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                    </div>
+                </div>
+                <div className="max-w-5xl mx-auto px-3 py-1 text-right">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                        {currentQuestion + 1} / {quiz.questions.length} questions
+                    </span>
+                </div>
+
+                <div className="max-w-5xl mx-auto px-4 py-6">
                     {/* Status Stats bar */}
                     <div className="bg-[#131b2e]/90 rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.3)] border border-slate-800 p-4 mb-6 grid grid-cols-3 gap-4">
                         <div className="text-center">
@@ -1227,11 +1296,55 @@ const Quiz = ({ user, quiz, onComplete }) => {
     );
 };
 
+// Confetti Component for pass celebration
+const Confetti = () => {
+    const pieces = Array.from({ length: 48 }, (_, i) => i);
+    const colors = ['#4169e2', '#818cf8', '#34d399', '#fbbf24', '#f472b6', '#60a5fa'];
+    return (
+        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+            {pieces.map(i => {
+                const color = colors[i % colors.length];
+                const left = `${Math.random() * 100}%`;
+                const delay = `${(Math.random() * 3).toFixed(2)}s`;
+                const duration = `${(2.5 + Math.random() * 2).toFixed(2)}s`;
+                const size = `${6 + Math.random() * 8}px`;
+                const rotate = `${Math.random() * 360}deg`;
+                return (
+                    <div
+                        key={i}
+                        style={{
+                            position: 'absolute',
+                            left,
+                            top: '-20px',
+                            width: size,
+                            height: size,
+                            backgroundColor: color,
+                            borderRadius: Math.random() > 0.5 ? '50%' : '2px',
+                            transform: `rotate(${rotate})`,
+                            animation: `confettiFall ${duration} ${delay} ease-in forwards`,
+                            opacity: 0.85
+                        }}
+                    />
+                );
+            })}
+            <style>{`
+                @keyframes confettiFall {
+                    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+                    100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+                }
+            `}</style>
+        </div>
+    );
+};
+
 // Result Component (Dark Theme - GSAP Animated)
 const Result = ({ score, totalQuestions, totalMarks, correct, wrong, notAttempted, onBackToList }) => {
     const maxMarks = totalMarks || (totalQuestions * 4);
     const percentage = maxMarks > 0 ? ((score / maxMarks) * 100).toFixed(1) : '0.0';
+    const isPassing = parseFloat(percentage) >= 50;
     const resultCardRef = useRef(null);
+    const [displayScore, setDisplayScore] = useState(0);
+    const [displayPercent, setDisplayPercent] = useState(0);
 
     useEffect(() => {
         if (resultCardRef.current) {
@@ -1241,10 +1354,26 @@ const Result = ({ score, totalQuestions, totalMarks, correct, wrong, notAttempte
                 { opacity: 1, y: 0, scale: 1, duration: 0.5, stagger: 0.08, ease: 'back.out(1.3)' }
             );
         }
+        // Animate score counter
+        const scoreTarget = score;
+        const percentTarget = parseFloat(percentage);
+        const duration = 1400;
+        const start = Date.now();
+        const tick = () => {
+            const elapsed = Date.now() - start;
+            const progress = Math.min(elapsed / duration, 1);
+            const ease = 1 - Math.pow(1 - progress, 3);
+            setDisplayScore(Math.round(scoreTarget * ease));
+            setDisplayPercent((percentTarget * ease).toFixed(1));
+            if (progress < 1) requestAnimationFrame(tick);
+        };
+        const raf = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(raf);
     }, []);
 
     return (
         <div className="min-h-screen bg-[#0b0f17] flex flex-col justify-between items-center p-4 sm:p-6 font-sans relative overflow-hidden text-slate-100">
+            {isPassing && <Confetti />}
             {/* Ambient Background Gradient Blurs (Dark Glow) */}
             <div className="gsap-ambient-glow absolute top-1/4 -left-20 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
             <div className="gsap-ambient-glow absolute top-1/3 -right-20 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none"></div>
@@ -1253,16 +1382,22 @@ const Result = ({ score, totalQuestions, totalMarks, correct, wrong, notAttempte
             <div className="absolute top-16 right-1/4 w-20 h-20 rounded-full border border-blue-500/20 pointer-events-none"></div>
             <div className="absolute bottom-24 left-1/4 w-12 h-12 rounded-full border border-blue-400/20 pointer-events-none"></div>
 
-            <div ref={resultCardRef} className="bg-[#131b2e]/90 backdrop-blur-xl rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-slate-800 p-8 sm:p-10 max-w-md w-full text-center my-auto relative z-10">
-                <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 ${percentage >= 50 ? 'bg-emerald-950/80 border border-emerald-800 text-emerald-400' : 'bg-red-950/80 border border-red-800 text-red-400'}`}>
-                    {percentage >= 50 ? (
+            <div ref={resultCardRef} className="bg-[#131b2e]/90 backdrop-blur-xl rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] border border-slate-800 p-8 sm:p-10 max-w-md w-full text-center my-auto relative z-10">
+                {isPassing && (
+                    <div className="absolute inset-0 rounded-3xl pointer-events-none overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-blue-500/5"></div>
+                        <div className="absolute top-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent"></div>
+                    </div>
+                )}
+                <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 relative ${isPassing ? 'bg-emerald-950/80 border border-emerald-800 text-emerald-400 shadow-[0_0_30px_rgba(52,211,153,0.2)]' : 'bg-red-950/80 border border-red-800 text-red-400'}`}>
+                    {isPassing ? (
                         <CheckCircle className="w-10 h-10" />
                     ) : (
                         <XCircle className="w-10 h-10" />
                     )}
                 </div>
 
-                <h2 className="text-2xl font-black text-white mb-1">Quiz Completed!</h2>
+                <h2 className="text-2xl font-black text-white mb-1">{isPassing ? '🎉 Excellent Work!' : 'Quiz Completed!'}</h2>
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Helix Club Quiz Submission</p>
                 <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400 font-medium mb-6">
                     <span>powered by</span>
@@ -1276,10 +1411,28 @@ const Result = ({ score, totalQuestions, totalMarks, correct, wrong, notAttempte
                     </a>
                 </div>
 
-                <div className="bg-slate-900/90 rounded-2xl p-6 mb-6 border border-slate-800">
-                    <div className="text-4xl font-black text-[#4169e2] mb-1">{score}</div>
-                    <div className="text-xs font-bold text-slate-400">out of {maxMarks} marks</div>
-                    <div className="mt-3 text-xl font-bold text-slate-200">{percentage}%</div>
+                <div className="bg-slate-900/90 rounded-2xl p-6 mb-6 border border-slate-800 relative overflow-hidden">
+                    {/* Circular progress ring */}
+                    <div className="flex items-center justify-center mb-3">
+                        <svg className="w-28 h-28 -rotate-90" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="42" fill="none" stroke="#1e293b" strokeWidth="8" />
+                            <circle
+                                cx="50" cy="50" r="42" fill="none"
+                                stroke={isPassing ? '#34d399' : '#f87171'}
+                                strokeWidth="8"
+                                strokeLinecap="round"
+                                strokeDasharray={`${2 * Math.PI * 42}`}
+                                strokeDashoffset={`${2 * Math.PI * 42 * (1 - parseFloat(percentage) / 100)}`}
+                                style={{ transition: 'stroke-dashoffset 1.4s cubic-bezier(0.25,1,0.5,1)' }}
+                            />
+                        </svg>
+                        <div className="absolute flex flex-col items-center">
+                            <div className={`text-3xl font-black ${isPassing ? 'text-emerald-400' : 'text-red-400'}`}>{displayScore}</div>
+                            <div className="text-[10px] font-bold text-slate-500">of {maxMarks} pts</div>
+                        </div>
+                    </div>
+                    <div className="text-2xl font-black text-white">{displayPercent}%</div>
+                    <div className="text-xs font-bold text-slate-400 mt-0.5">{isPassing ? 'Great performance!' : 'Keep practicing!'}</div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 mb-6 text-left">
