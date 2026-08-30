@@ -314,7 +314,7 @@ const UserDetails = ({ user, onComplete }) => {
     );
 };
 
-// Quiz List Component (Redesigned with LuckyJob Reference Layout)
+// Quiz List Component (Matching Login Screen Aesthetic)
 const QuizList = ({ user, onStartQuiz, onLogout }) => {
     const [quizzes, setQuizzes] = useState([]);
     const [submissions, setSubmissions] = useState({});
@@ -368,12 +368,12 @@ const QuizList = ({ user, onStartQuiz, onLogout }) => {
 
     // Color theme cycling for aesthetic pastel cards
     const cardThemes = [
-        { bg: 'bg-[#fff4ec]', border: 'border-[#fed7c3]', badge: 'bg-orange-100 text-orange-800', tag: 'bg-white/90 text-orange-950', dot: 'bg-orange-400' },
-        { bg: 'bg-[#eefbf6]', border: 'border-[#c4f3df]', badge: 'bg-emerald-100 text-emerald-800', tag: 'bg-white/90 text-emerald-950', dot: 'bg-emerald-400' },
-        { bg: 'bg-[#f4f0ff]', border: 'border-[#e0d6fe]', badge: 'bg-purple-100 text-purple-800', tag: 'bg-white/90 text-purple-950', dot: 'bg-purple-400' },
-        { bg: 'bg-[#eef6ff]', border: 'border-[#cbe4ff]', badge: 'bg-blue-100 text-blue-800', tag: 'bg-white/90 text-blue-950', dot: 'bg-blue-400' },
-        { bg: 'bg-[#fff0f5]', border: 'border-[#ffd6e6]', badge: 'bg-pink-100 text-pink-800', tag: 'bg-white/90 text-pink-950', dot: 'bg-pink-400' },
-        { bg: 'bg-[#fefce8]', border: 'border-[#fef08a]', badge: 'bg-amber-100 text-amber-800', tag: 'bg-white/90 text-amber-950', dot: 'bg-amber-400' }
+        { bg: 'bg-[#fff7f0]', border: 'border-[#ffdecb]', badge: 'bg-orange-100 text-orange-800', tag: 'bg-white/95 text-orange-950', dot: 'bg-orange-400' },
+        { bg: 'bg-[#f0fbf6]', border: 'border-[#cbf3e1]', badge: 'bg-emerald-100 text-emerald-800', tag: 'bg-white/95 text-emerald-950', dot: 'bg-emerald-400' },
+        { bg: 'bg-[#f6f2ff]', border: 'border-[#e4dcfe]', badge: 'bg-purple-100 text-purple-800', tag: 'bg-white/95 text-purple-950', dot: 'bg-purple-400' },
+        { bg: 'bg-[#f0f7ff]', border: 'border-[#cde5ff]', badge: 'bg-blue-100 text-blue-800', tag: 'bg-white/95 text-blue-950', dot: 'bg-blue-400' },
+        { bg: 'bg-[#fff2f7]', border: 'border-[#fedbe9]', badge: 'bg-pink-100 text-pink-800', tag: 'bg-white/95 text-pink-950', dot: 'bg-pink-400' },
+        { bg: 'bg-[#fefce8]', border: 'border-[#fef08a]', badge: 'bg-amber-100 text-amber-800', tag: 'bg-white/95 text-amber-950', dot: 'bg-amber-400' }
     ];
 
     // Filter & Sort Logic
@@ -401,43 +401,71 @@ const QuizList = ({ user, onStartQuiz, onLogout }) => {
     const availableCount = Math.max(0, quizzes.length - completedCount);
 
     return (
-        <div className="min-h-screen bg-[#f8fafc] flex flex-col justify-between font-sans w-full">
+        <div className="min-h-screen bg-[#f8fafc] flex flex-col justify-between font-sans w-full relative overflow-hidden">
+            {/* Ambient Background Gradient Blurs (Matching Login) */}
+            <div className="absolute top-1/6 -left-20 w-80 h-80 bg-sky-200/40 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="absolute top-1/3 -right-20 w-96 h-96 bg-blue-200/30 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="absolute bottom-1/4 left-1/3 w-80 h-80 bg-indigo-100/40 rounded-full blur-3xl pointer-events-none"></div>
+
+            {/* Left Organic Fluid Blob (Matching Login) */}
+            <div className="absolute -left-16 sm:-left-8 top-1/4 w-72 sm:w-96 h-72 sm:h-96 pointer-events-none select-none z-0 opacity-40">
+                <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-sky-200 fill-current">
+                    <path d="M44.7,-76.4C58.8,-69.2,71.8,-59.1,79.6,-45.8C87.4,-32.6,90,-16.3,88.5,-0.9C87,14.6,81.4,29.1,73.1,42.2C64.8,55.3,53.8,66.9,40.4,74.1C27.1,81.3,13.5,84.1,-0.5,85C-14.6,85.8,-29.1,84.7,-42.2,78.2C-55.3,71.8,-66.9,60,-74.8,46.1C-82.7,32.2,-86.8,16.1,-86.3,0.3C-85.8,-15.6,-80.6,-31.1,-71.9,-43.8C-63.1,-56.4,-50.7,-66.1,-37.2,-73.6C-23.7,-81,-11.8,-86.1,1.7,-89C15.3,-92,30.6,-83.6,44.7,-76.4Z" transform="translate(100 100)" />
+                </svg>
+            </div>
+
+            {/* Right Organic Fluid Blob (Matching Login) */}
+            <div className="absolute -right-16 sm:-right-8 top-1/3 w-80 sm:w-112 h-80 sm:h-112 pointer-events-none select-none z-0 opacity-40">
+                <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-sky-300/60 fill-current">
+                    <path d="M47.7,-79.8C61.4,-73.4,71.9,-59.9,78.4,-44.8C84.8,-29.7,87.2,-14.8,85.4,0.1C83.5,14.9,77.4,29.8,69.5,43.2C61.7,56.5,52.1,68.3,39.6,75.7C27.1,83.1,11.7,86.1,-3.8,92.7C-19.3,99.3,-34.9,109.5,-47.9,104.9C-60.9,100.3,-71.4,80.9,-78.9,64.2C-86.4,47.5,-90.9,33.5,-91.9,19.2C-92.9,4.9,-90.4,-9.7,-84.9,-23.4C-79.3,-37.1,-70.7,-49.9,-59,-57.2C-47.3,-64.5,-32.5,-66.3,-18.4,-72.1C-4.3,-77.9,9,-87.7,24,-89.8C38.9,-91.9,55.5,-86.3,47.7,-79.8Z" transform="translate(100 100)" />
+                </svg>
+            </div>
+
+            {/* Decorative Floating Circles & Geometric Elements (Matching Login) */}
+            <div className="absolute top-20 right-1/4 w-20 h-20 rounded-full border-2 border-sky-300/40 pointer-events-none"></div>
+            <div className="absolute top-36 left-1/3 w-3.5 h-3.5 rounded-full bg-indigo-500/60 pointer-events-none"></div>
+            <div className="absolute top-44 left-10 sm:left-24 w-8 h-8 bg-sky-300/40 rotate-12 rounded-lg pointer-events-none"></div>
+            <div className="absolute bottom-36 right-12 sm:right-28 w-6 h-6 bg-indigo-400/30 rotate-45 rounded-sm pointer-events-none"></div>
+            <div className="absolute bottom-28 left-16 w-12 h-12 rounded-full border-2 border-sky-400/30 pointer-events-none"></div>
+            <div className="absolute top-2/3 right-1/4 w-3 h-3 rounded-full bg-sky-400/50 pointer-events-none"></div>
+
             {/* Full-width Main Wrapper */}
-            <div className="w-full flex-1">
-                {/* 1. Dark Top Header Bar (Edge-to-Edge) */}
-                <header className="bg-[#121316] text-white w-full shadow-md">
+            <div className="w-full flex-1 relative z-10">
+                {/* 1. Modern White Glassmorphic Navbar (Matching Login Aesthetic, No Black) */}
+                <header className="bg-white/90 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                     {/* Top Row: Brand & Navigation */}
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4 border-b border-white/10">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
                         {/* Logo & Portal Name */}
                         <div className="flex items-center gap-3">
-                            <img src={logoImg} alt="Helix Logo" className="w-8 h-8 object-contain drop-shadow-sm" />
+                            <img src={logoImg} alt="Helix Logo" className="w-9 h-9 object-contain drop-shadow-xs" />
                             <div className="flex items-center gap-2">
-                                <span className="font-extrabold text-lg sm:text-xl tracking-tight text-white">
+                                <img src={helixTextImg} alt="Helix" className="h-6 object-contain hidden sm:block" />
+                                <span className="font-extrabold text-lg sm:text-xl tracking-tight text-slate-900">
                                     Helix Club Quiz
                                 </span>
-                                <span className="hidden sm:inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-[#4169e2]/30 text-sky-300 border border-[#4169e2]/50 rounded-full">
+                                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-blue-50 text-[#4169e2] border border-blue-200/60 rounded-full">
                                     Official
                                 </span>
                             </div>
                         </div>
 
                         {/* Navigation Tabs (Desktop) */}
-                        <nav className="hidden md:flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10 text-xs font-semibold">
+                        <nav className="hidden md:flex items-center gap-1.5 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/60 text-xs font-bold">
                             <button
                                 onClick={() => setStatusFilter('all')}
-                                className={`px-4 py-1.5 rounded-lg transition-colors ${statusFilter === 'all' ? 'bg-[#4169e2] text-white' : 'text-slate-300 hover:text-white'}`}
+                                className={`px-4 py-1.5 rounded-xl transition-all ${statusFilter === 'all' ? 'bg-[#4169e2] text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:text-slate-900'}`}
                             >
-                                All Quizzes
+                                All Quizzes ({quizzes.length})
                             </button>
                             <button
                                 onClick={() => setStatusFilter('available')}
-                                className={`px-4 py-1.5 rounded-lg transition-colors ${statusFilter === 'available' ? 'bg-[#4169e2] text-white' : 'text-slate-300 hover:text-white'}`}
+                                className={`px-4 py-1.5 rounded-xl transition-all ${statusFilter === 'available' ? 'bg-[#4169e2] text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:text-slate-900'}`}
                             >
                                 Available ({availableCount})
                             </button>
                             <button
                                 onClick={() => setStatusFilter('completed')}
-                                className={`px-4 py-1.5 rounded-lg transition-colors ${statusFilter === 'completed' ? 'bg-[#4169e2] text-white' : 'text-slate-300 hover:text-white'}`}
+                                className={`px-4 py-1.5 rounded-xl transition-all ${statusFilter === 'completed' ? 'bg-[#4169e2] text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:text-slate-900'}`}
                             >
                                 Submissions ({completedCount})
                             </button>
@@ -445,18 +473,18 @@ const QuizList = ({ user, onStartQuiz, onLogout }) => {
 
                         {/* Right: User Profile & Logout */}
                         <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2.5 bg-white/10 px-3 py-1.5 rounded-2xl border border-white/10">
-                                <div className="w-7 h-7 rounded-full bg-[#4169e2] text-white font-bold text-xs flex items-center justify-center shadow-sm">
+                            <div className="flex items-center gap-2.5 bg-slate-50 px-3 py-1.5 rounded-2xl border border-slate-200/80 shadow-2xs">
+                                <div className="w-7 h-7 rounded-full bg-[#4169e2] text-white font-bold text-xs flex items-center justify-center shadow-xs">
                                     {user.fullName?.charAt(0)?.toUpperCase() || 'U'}
                                 </div>
                                 <div className="text-left hidden sm:block">
-                                    <p className="text-xs font-bold text-white leading-tight">{user.fullName}</p>
-                                    <p className="text-[10px] text-slate-400 leading-tight">{user.rollNumber}</p>
+                                    <p className="text-xs font-bold text-slate-800 leading-tight">{user.fullName}</p>
+                                    <p className="text-[10px] font-semibold text-slate-500 leading-tight">{user.rollNumber}</p>
                                 </div>
                             </div>
                             <button
                                 onClick={onLogout}
-                                className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
+                                className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
                                 title="Logout"
                             >
                                 <LogOut className="w-4 h-4" />
@@ -464,29 +492,29 @@ const QuizList = ({ user, onStartQuiz, onLogout }) => {
                         </div>
                     </div>
 
-                    {/* Sub-Header Search & Quick Filter Bar */}
-                    <div className="bg-[#181a1f] w-full border-b border-slate-800">
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
+                    {/* Sub-Header Search & Quick Indicators (Clean Light Styling) */}
+                    <div className="bg-slate-50/80 border-t border-slate-200/60 w-full">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-4">
                             <div className="relative flex-1 max-w-md">
                                 <input
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="Search quizzes by title or topic..."
-                                    className="w-full bg-white/10 border border-white/10 rounded-xl pl-9 pr-4 py-2 text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#4169e2]"
+                                    placeholder="Search quizzes by title..."
+                                    className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#4169e2] shadow-2xs"
                                 />
                                 <svg className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </div>
 
-                            <div className="flex items-center gap-3 text-xs text-slate-400">
-                                <span className="hidden sm:inline flex items-center gap-1.5">
+                            <div className="flex items-center gap-3 text-xs text-slate-600 font-semibold">
+                                <span className="hidden sm:flex items-center gap-1.5 text-slate-700">
                                     <ShieldCheck className="w-4 h-4 text-[#4169e2]" /> Anti-Cheat Monitored
                                 </span>
-                                <span className="hidden sm:inline">•</span>
-                                <span className="flex items-center gap-1 text-sky-400 font-semibold">
-                                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse inline-block"></span> Live Quizzes
+                                <span className="hidden sm:inline text-slate-300">•</span>
+                                <span className="flex items-center gap-1 text-emerald-600">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block"></span> Live Assessments
                                 </span>
                             </div>
                         </div>
@@ -497,42 +525,43 @@ const QuizList = ({ user, onStartQuiz, onLogout }) => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col lg:flex-row gap-8">
                     {/* Left Sidebar */}
                     <aside className="w-full lg:w-72 shrink-0 space-y-6">
-                        {/* Dark Hero Promo Card (LuckyJob reference style) */}
-                        <div className="bg-[#121316] text-white rounded-3xl p-6 relative overflow-hidden shadow-lg border border-slate-800">
-                            {/* Abstract Contour Ring Accents in background */}
-                            <div className="absolute -right-8 -top-8 w-36 h-36 rounded-full border border-white/10 pointer-events-none"></div>
-                            <div className="absolute -right-16 -top-16 w-52 h-52 rounded-full border border-white/5 pointer-events-none"></div>
-                            <div className="absolute -left-10 -bottom-10 w-32 h-32 rounded-full border border-white/5 pointer-events-none"></div>
+                        {/* Vibrant Royal Blue Hero Card (Replaced Black with Blue + Floating Circles) */}
+                        <div className="bg-gradient-to-br from-[#4169e2] via-[#355cd1] to-[#2645aa] text-white rounded-3xl p-6 relative overflow-hidden shadow-[0_15px_35px_rgba(65,105,226,0.22)] border border-blue-400/30">
+                            {/* Abstract Geometric Circle Elements in background */}
+                            <div className="absolute -right-8 -top-8 w-36 h-36 rounded-full border-2 border-white/20 pointer-events-none"></div>
+                            <div className="absolute -right-16 -top-16 w-52 h-52 rounded-full border border-white/15 pointer-events-none"></div>
+                            <div className="absolute -left-10 -bottom-10 w-32 h-32 rounded-full border border-white/15 pointer-events-none"></div>
+                            <div className="absolute top-1/2 right-4 w-3 h-3 rounded-full bg-white/40 pointer-events-none"></div>
 
                             <div className="relative z-10">
-                                <div className="w-8 h-8 rounded-xl bg-[#4169e2]/20 border border-[#4169e2]/40 flex items-center justify-center mb-4">
-                                    <Sparkles className="w-4 h-4 text-sky-400" />
+                                <div className="w-9 h-9 rounded-2xl bg-white/20 backdrop-blur-xs border border-white/30 flex items-center justify-center mb-4 shadow-sm">
+                                    <Sparkles className="w-4.5 h-4.5 text-white" />
                                 </div>
-                                <h3 className="text-xl font-extrabold leading-snug mb-2">
-                                    Challenge Yourself in <span className="text-[#4169e2]">Helix Club Quiz</span>
+                                <h3 className="text-xl font-black leading-snug mb-2">
+                                    Helix Club Quiz Assessment
                                 </h3>
-                                <p className="text-xs text-slate-400 leading-relaxed mb-6">
-                                    Test your technical knowledge, solve timed challenges, and earn your ranking on the board.
+                                <p className="text-xs text-blue-100 leading-relaxed mb-6">
+                                    Test your technical knowledge, solve timed challenges, and earn your ranking on the leaderboard.
                                 </p>
-                                <div className="p-3 bg-white/5 border border-white/10 rounded-2xl mb-4 text-xs text-slate-300 space-y-1.5">
-                                    <div className="flex items-center gap-2 text-sky-300 font-semibold">
-                                        <Award className="w-3.5 h-3.5" /> No Negative Marking
+                                <div className="p-3 bg-white/10 backdrop-blur-xs border border-white/20 rounded-2xl mb-2 text-xs text-white space-y-1.5 font-medium">
+                                    <div className="flex items-center gap-2">
+                                        <Award className="w-3.5 h-3.5 text-sky-200" /> No Negative Marking
                                     </div>
-                                    <div className="flex items-center gap-2 text-amber-300 font-semibold">
-                                        <Timer className="w-3.5 h-3.5" /> Auto-submit on Time Up
+                                    <div className="flex items-center gap-2">
+                                        <Timer className="w-3.5 h-3.5 text-amber-200" /> Auto-submit on Time Up
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Filter Status Section */}
-                        <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-sm">
+                        {/* Filter Status Card (Clean White) */}
+                        <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-[0_10px_30px_rgba(8,112,184,0.04)]">
                             <div className="flex items-center justify-between mb-4">
-                                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">Filters</h4>
+                                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">Quick Filters</h4>
                                 {(statusFilter !== 'all' || searchQuery) && (
                                     <button
                                         onClick={() => { setStatusFilter('all'); setSearchQuery(''); }}
-                                        className="text-[11px] font-bold text-[#4169e2] hover:underline"
+                                        className="text-[11px] font-bold text-[#4169e2] hover:underline cursor-pointer"
                                     >
                                         Reset
                                     </button>
@@ -542,24 +571,24 @@ const QuizList = ({ user, onStartQuiz, onLogout }) => {
                             <div className="space-y-2">
                                 <button
                                     onClick={() => setStatusFilter('all')}
-                                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${statusFilter === 'all' ? 'bg-[#4169e2] text-white shadow-sm' : 'hover:bg-slate-100 text-slate-700'}`}
+                                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${statusFilter === 'all' ? 'bg-[#4169e2] text-white shadow-md shadow-blue-500/20' : 'hover:bg-slate-100 text-slate-700'}`}
                                 >
                                     <span>All Quizzes</span>
-                                    <span className={`px-2 py-0.5 rounded-full text-[10px] ${statusFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>{quizzes.length}</span>
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] ${statusFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'}`}>{quizzes.length}</span>
                                 </button>
                                 <button
                                     onClick={() => setStatusFilter('available')}
-                                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${statusFilter === 'available' ? 'bg-[#4169e2] text-white shadow-sm' : 'hover:bg-slate-100 text-slate-700'}`}
+                                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${statusFilter === 'available' ? 'bg-[#4169e2] text-white shadow-md shadow-blue-500/20' : 'hover:bg-slate-100 text-slate-700'}`}
                                 >
                                     <span>Available (Unattempted)</span>
-                                    <span className={`px-2 py-0.5 rounded-full text-[10px] ${statusFilter === 'available' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>{availableCount}</span>
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] ${statusFilter === 'available' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'}`}>{availableCount}</span>
                                 </button>
                                 <button
                                     onClick={() => setStatusFilter('completed')}
-                                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${statusFilter === 'completed' ? 'bg-[#4169e2] text-white shadow-sm' : 'hover:bg-slate-100 text-slate-700'}`}
+                                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${statusFilter === 'completed' ? 'bg-[#4169e2] text-white shadow-md shadow-blue-500/20' : 'hover:bg-slate-100 text-slate-700'}`}
                                 >
                                     <span>Completed (Submitted)</span>
-                                    <span className={`px-2 py-0.5 rounded-full text-[10px] ${statusFilter === 'completed' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>{completedCount}</span>
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] ${statusFilter === 'completed' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'}`}>{completedCount}</span>
                                 </button>
                             </div>
                         </div>
@@ -573,7 +602,7 @@ const QuizList = ({ user, onStartQuiz, onLogout }) => {
                                 <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                                     Available Quizzes
                                 </h2>
-                                <span className="px-3 py-0.5 bg-slate-200/80 text-slate-800 rounded-full text-xs font-black">
+                                <span className="px-3 py-0.5 bg-blue-50 text-[#4169e2] border border-blue-200/60 rounded-full text-xs font-black">
                                     {filteredQuizzes.length}
                                 </span>
                             </div>
@@ -583,7 +612,7 @@ const QuizList = ({ user, onStartQuiz, onLogout }) => {
                                 <select
                                     value={sortBy}
                                     onChange={(e) => setSortBy(e.target.value)}
-                                    className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-slate-700 font-bold focus:outline-none focus:ring-1 focus:ring-[#4169e2] cursor-pointer"
+                                    className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-slate-700 font-bold focus:outline-none focus:ring-2 focus:ring-[#4169e2] cursor-pointer shadow-2xs"
                                 >
                                     <option value="latest">Latest</option>
                                     <option value="marks">Highest Marks</option>
@@ -594,12 +623,12 @@ const QuizList = ({ user, onStartQuiz, onLogout }) => {
 
                         {/* Quiz Cards */}
                         {loading ? (
-                            <div className="text-center py-16 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                            <div className="text-center py-16 bg-white rounded-3xl border border-slate-100 shadow-[0_10px_30px_rgba(8,112,184,0.04)]">
                                 <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#4169e2] border-t-transparent"></div>
                                 <p className="mt-4 text-sm font-semibold text-slate-500">Loading quizzes...</p>
                             </div>
                         ) : filteredQuizzes.length === 0 ? (
-                            <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+                            <div className="text-center py-16 bg-white rounded-3xl border border-slate-200/80 p-8 shadow-[0_10px_30px_rgba(8,112,184,0.04)]">
                                 <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
                                     <BookOpen className="w-8 h-8" />
                                 </div>
@@ -621,16 +650,16 @@ const QuizList = ({ user, onStartQuiz, onLogout }) => {
                                     return (
                                         <div
                                             key={quiz.id}
-                                            className={`${theme.bg} ${theme.border} border-2 rounded-3xl p-5 sm:p-6 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between relative`}
+                                            className={`${theme.bg} ${theme.border} border-2 rounded-3xl p-5 sm:p-6 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between relative shadow-[0_4px_20px_rgba(0,0,0,0.02)]`}
                                         >
                                             <div>
                                                 {/* Top Tag & Bookmark */}
                                                 <div className="flex items-center justify-between gap-2 mb-4">
-                                                    <span className={`px-3 py-1 rounded-full text-[11px] font-bold ${theme.tag} shadow-sm flex items-center gap-1.5`}>
+                                                    <span className={`px-3 py-1 rounded-full text-[11px] font-bold ${theme.tag} shadow-xs flex items-center gap-1.5 border border-black/5`}>
                                                         <Clock className="w-3 h-3 text-[#4169e2]" />
                                                         {quiz.duration} mins
                                                     </span>
-                                                    <div className="w-7 h-7 rounded-full bg-white/80 flex items-center justify-center shadow-xs">
+                                                    <div className="w-7 h-7 rounded-full bg-white/90 flex items-center justify-center shadow-2xs border border-black/5">
                                                         <Award className="w-3.5 h-3.5 text-slate-600" />
                                                     </div>
                                                 </div>
@@ -647,13 +676,13 @@ const QuizList = ({ user, onStartQuiz, onLogout }) => {
 
                                                 {/* Badges / Information Tags */}
                                                 <div className="flex flex-wrap gap-1.5 mb-6">
-                                                    <span className="px-2.5 py-1 bg-white/85 backdrop-blur-xs rounded-xl text-[11px] font-semibold text-slate-700 border border-black/5 flex items-center gap-1">
+                                                    <span className="px-2.5 py-1 bg-white/90 backdrop-blur-xs rounded-xl text-[11px] font-semibold text-slate-700 border border-black/5 flex items-center gap-1">
                                                         <Hash className="w-3 h-3 text-[#4169e2]" /> {quiz.questions?.length || 0} Questions
                                                     </span>
-                                                    <span className="px-2.5 py-1 bg-white/85 backdrop-blur-xs rounded-xl text-[11px] font-semibold text-slate-700 border border-black/5">
+                                                    <span className="px-2.5 py-1 bg-white/90 backdrop-blur-xs rounded-xl text-[11px] font-semibold text-slate-700 border border-black/5">
                                                         +{marksPerQ} Marks/Q
                                                     </span>
-                                                    <span className="px-2.5 py-1 bg-white/85 backdrop-blur-xs rounded-xl text-[11px] font-semibold text-emerald-700 border border-black/5">
+                                                    <span className="px-2.5 py-1 bg-white/90 backdrop-blur-xs rounded-xl text-[11px] font-semibold text-emerald-700 border border-black/5">
                                                         0 -ve
                                                     </span>
                                                 </div>
@@ -691,7 +720,7 @@ const QuizList = ({ user, onStartQuiz, onLogout }) => {
             </div>
 
             {/* Bottom Footer - Made by ZECTRAL */}
-            <footer className="py-4 text-center text-sm font-medium text-slate-500">
+            <footer className="relative z-10 py-5 text-center text-sm font-medium text-slate-500 border-t border-slate-200/80 bg-white/60 backdrop-blur-xs">
                 made by{' '}
                 <a
                     href="https://zectral.vercel.app/"
@@ -706,7 +735,7 @@ const QuizList = ({ user, onStartQuiz, onLogout }) => {
     );
 };
 
-// Quiz Component (Active Test Interface)
+// Quiz Component (Active Test Interface - Matching Login Theme)
 const Quiz = ({ user, quiz, onComplete }) => {
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [answers, setAnswers] = useState({});
@@ -801,23 +830,39 @@ const Quiz = ({ user, quiz, onComplete }) => {
     const notAttemptedCount = quiz.questions.length - attemptedCount;
 
     return (
-        <div className="min-h-screen bg-[#f1f5f9] flex flex-col justify-between font-sans">
-            <div>
-                {/* Header */}
-                <div className="bg-[#121316] text-white shadow-md sticky top-0 z-20">
+        <div className="min-h-screen bg-[#f8fafc] flex flex-col justify-between font-sans relative overflow-hidden">
+            {/* Ambient Background Gradient Blurs (Matching Login) */}
+            <div className="absolute top-1/6 -left-20 w-80 h-80 bg-sky-200/40 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="absolute top-1/3 -right-20 w-96 h-96 bg-blue-200/30 rounded-full blur-3xl pointer-events-none"></div>
+
+            {/* Left Organic Fluid Blob */}
+            <div className="absolute -left-16 sm:-left-8 top-1/4 w-72 sm:w-96 h-72 sm:h-96 pointer-events-none select-none z-0 opacity-40">
+                <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-sky-200 fill-current">
+                    <path d="M44.7,-76.4C58.8,-69.2,71.8,-59.1,79.6,-45.8C87.4,-32.6,90,-16.3,88.5,-0.9C87,14.6,81.4,29.1,73.1,42.2C64.8,55.3,53.8,66.9,40.4,74.1C27.1,81.3,13.5,84.1,-0.5,85C-14.6,85.8,-29.1,84.7,-42.2,78.2C-55.3,71.8,-66.9,60,-74.8,46.1C-82.7,32.2,-86.8,16.1,-86.3,0.3C-85.8,-15.6,-80.6,-31.1,-71.9,-43.8C-63.1,-56.4,-50.7,-66.1,-37.2,-73.6C-23.7,-81,-11.8,-86.1,1.7,-89C15.3,-92,30.6,-83.6,44.7,-76.4Z" transform="translate(100 100)" />
+                </svg>
+            </div>
+
+            {/* Decorative Floating Circles */}
+            <div className="absolute top-20 right-1/4 w-20 h-20 rounded-full border-2 border-sky-300/40 pointer-events-none"></div>
+            <div className="absolute top-36 left-1/3 w-3.5 h-3.5 rounded-full bg-indigo-500/60 pointer-events-none"></div>
+            <div className="absolute bottom-28 left-16 w-12 h-12 rounded-full border-2 border-sky-400/30 pointer-events-none"></div>
+
+            <div className="relative z-10 flex-1">
+                {/* Header (Clean White Glassmorphic - No Black) */}
+                <div className="bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-20 shadow-xs">
                     <div className="max-w-5xl mx-auto px-4 py-3.5 flex justify-between items-center">
                         <div className="flex items-center gap-3">
-                            <img src={logoImg} alt="Helix Logo" className="w-7 h-7 object-contain" />
+                            <img src={logoImg} alt="Helix Logo" className="w-8 h-8 object-contain" />
                             <div>
-                                <h2 className="text-base sm:text-lg font-bold text-white leading-tight">{quiz.name}</h2>
-                                <p className="text-xs text-slate-400">
+                                <h2 className="text-base sm:text-lg font-bold text-slate-900 leading-tight">{quiz.name}</h2>
+                                <p className="text-xs text-slate-500 font-medium">
                                     Question {currentQuestion + 1} of {quiz.questions.length} • Helix Club Quiz
                                 </p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 px-3.5 py-1.5 rounded-xl">
-                            <Clock className="w-4 h-4 text-red-400" />
-                            <span className="font-mono text-base font-bold text-red-400">
+                        <div className="flex items-center gap-2 bg-red-50 border border-red-200 px-3.5 py-1.5 rounded-2xl shadow-2xs">
+                            <Clock className="w-4 h-4 text-red-600" />
+                            <span className="font-mono text-base font-bold text-red-600">
                                 {formatTime(timeLeft)}
                             </span>
                         </div>
@@ -826,25 +871,25 @@ const Quiz = ({ user, quiz, onComplete }) => {
 
                 <div className="max-w-5xl mx-auto px-4 py-8">
                     {/* Status Stats bar */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-6 grid grid-cols-3 gap-4">
+                    <div className="bg-white rounded-3xl shadow-[0_10px_30px_rgba(8,112,184,0.04)] border border-slate-200/80 p-4 mb-6 grid grid-cols-3 gap-4">
                         <div className="text-center">
                             <div className="text-xl sm:text-2xl font-black text-slate-900">{quiz.questions.length}</div>
-                            <div className="text-xs font-semibold text-slate-500">Total</div>
+                            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total</div>
                         </div>
                         <div className="text-center border-x border-slate-100">
-                            <div className="text-xl sm:text-2xl font-black text-green-600">{attemptedCount}</div>
-                            <div className="text-xs font-semibold text-slate-500">Attempted</div>
+                            <div className="text-xl sm:text-2xl font-black text-emerald-600">{attemptedCount}</div>
+                            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Attempted</div>
                         </div>
                         <div className="text-center">
-                            <div className="text-xl sm:text-2xl font-black text-amber-600">{notAttemptedCount}</div>
-                            <div className="text-xs font-semibold text-slate-500">Not Attempted</div>
+                            <div className="text-xl sm:text-2xl font-black text-amber-500">{notAttemptedCount}</div>
+                            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Not Attempted</div>
                         </div>
                     </div>
 
                     {/* Question Box */}
-                    <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 sm:p-8 mb-6">
+                    <div className="bg-white rounded-3xl shadow-[0_20px_50px_rgba(8,_112,_184,_0.06)] border border-slate-100 p-6 sm:p-8 mb-6">
                         <div className="flex items-center gap-2 mb-3">
-                            <span className="text-xs font-extrabold uppercase tracking-wider px-2.5 py-1 bg-blue-50 text-[#4169e2] rounded-lg">
+                            <span className="text-xs font-extrabold uppercase tracking-wider px-3 py-1 bg-blue-50 text-[#4169e2] border border-blue-200/60 rounded-full">
                                 Question {currentQuestion + 1}
                             </span>
                         </div>
@@ -859,7 +904,7 @@ const Quiz = ({ user, quiz, onComplete }) => {
                                     onClick={() => handleAnswer(idx)}
                                     className={`w-full text-left px-5 py-4 rounded-2xl border-2 transition-all cursor-pointer ${answers[currentQuestion] === idx
                                         ? 'border-[#4169e2] bg-blue-50/70 shadow-sm'
-                                        : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50'
+                                        : 'border-slate-200/80 hover:border-blue-300 hover:bg-slate-50'
                                         }`}
                                 >
                                     <div className="flex items-center gap-3">
@@ -883,7 +928,7 @@ const Quiz = ({ user, quiz, onComplete }) => {
                         <button
                             onClick={() => setCurrentQuestion(Math.max(0, currentQuestion - 1))}
                             disabled={currentQuestion === 0}
-                            className="px-6 py-3 border-2 border-slate-200 rounded-xl font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm cursor-pointer"
+                            className="px-6 py-3 border-2 border-slate-200 rounded-2xl font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm cursor-pointer bg-white"
                         >
                             ← Previous
                         </button>
@@ -892,14 +937,14 @@ const Quiz = ({ user, quiz, onComplete }) => {
                             <button
                                 onClick={submitQuiz}
                                 disabled={submitted}
-                                className="px-8 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 disabled:opacity-50 transition-all text-sm shadow-md shadow-green-600/20 cursor-pointer"
+                                className="px-8 py-3 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 disabled:opacity-50 transition-all text-sm shadow-md shadow-emerald-600/20 cursor-pointer"
                             >
                                 {submitted ? 'Submitting...' : 'Submit Quiz ✓'}
                             </button>
                         ) : (
                             <button
                                 onClick={() => setCurrentQuestion(currentQuestion + 1)}
-                                className="px-7 py-3 bg-[#4169e2] text-white rounded-xl font-bold hover:bg-[#3557c5] transition-all text-sm shadow-md shadow-blue-500/20 cursor-pointer"
+                                className="px-7 py-3 bg-[#4169e2] text-white rounded-2xl font-bold hover:bg-[#3557c5] transition-all text-sm shadow-md shadow-blue-500/20 cursor-pointer"
                             >
                                 Next →
                             </button>
@@ -907,7 +952,7 @@ const Quiz = ({ user, quiz, onComplete }) => {
                     </div>
 
                     {/* Question Palette */}
-                    <div className="mt-8 pt-6 border-t border-slate-200">
+                    <div className="mt-8 pt-6 border-t border-slate-200/80">
                         <p className="text-xs font-bold text-slate-500 uppercase tracking-wider text-center mb-4">Question Palette</p>
                         <div className="flex gap-2 flex-wrap justify-center">
                             {quiz.questions.map((_, idx) => (
@@ -915,7 +960,7 @@ const Quiz = ({ user, quiz, onComplete }) => {
                                     key={idx}
                                     onClick={() => setCurrentQuestion(idx)}
                                     className={`w-9 h-9 rounded-xl font-bold text-xs transition-all cursor-pointer ${answers[idx] !== undefined
-                                        ? 'bg-green-600 text-white shadow-xs'
+                                        ? 'bg-emerald-600 text-white shadow-xs'
                                         : idx === currentQuestion
                                             ? 'bg-[#4169e2] text-white ring-2 ring-blue-300 shadow-xs'
                                             : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
@@ -930,13 +975,13 @@ const Quiz = ({ user, quiz, onComplete }) => {
             </div>
 
             {/* Bottom Footer */}
-            <footer className="py-4 text-center text-sm font-medium text-slate-500">
+            <footer className="relative z-10 py-5 text-center text-sm font-medium text-slate-500 border-t border-slate-200/80 bg-white/60 backdrop-blur-xs">
                 made by{' '}
                 <a
                     href="https://zectral.vercel.app/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-bold text-[#4169e2] hover:text-[#3557c5] underline decoration-blue-300 underline-offset-4 transition-colors"
+                    className="font-bold text-[#4169e2] hover:text-[#3557c5] underline decoration-blue-300 underline-offset-4 hover:decoration-blue-500 transition-colors"
                 >
                     ZECTRAL
                 </a>
@@ -945,15 +990,23 @@ const Quiz = ({ user, quiz, onComplete }) => {
     );
 };
 
-// Result Component
+// Result Component (Matching Login Theme)
 const Result = ({ score, totalQuestions, totalMarks, correct, wrong, notAttempted, onBackToList }) => {
     const maxMarks = totalMarks || (totalQuestions * 4);
     const percentage = maxMarks > 0 ? ((score / maxMarks) * 100).toFixed(1) : '0.0';
 
     return (
-        <div className="min-h-screen bg-[#f1f5f9] flex flex-col justify-between items-center p-4 sm:p-6 font-sans">
-            <div className="bg-white rounded-3xl shadow-xl border border-slate-200 p-8 sm:p-10 max-w-md w-full text-center my-auto">
-                <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 ${percentage >= 50 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+        <div className="min-h-screen bg-[#f8fafc] flex flex-col justify-between items-center p-4 sm:p-6 font-sans relative overflow-hidden">
+            {/* Ambient Background Gradient Blurs (Matching Login) */}
+            <div className="absolute top-1/4 -left-20 w-80 h-80 bg-sky-200/40 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="absolute top-1/3 -right-20 w-96 h-96 bg-blue-200/30 rounded-full blur-3xl pointer-events-none"></div>
+
+            {/* Floating Geometric Elements */}
+            <div className="absolute top-16 right-1/4 w-20 h-20 rounded-full border-2 border-sky-300/40 pointer-events-none"></div>
+            <div className="absolute bottom-24 left-1/4 w-12 h-12 rounded-full border-2 border-blue-400/30 pointer-events-none"></div>
+
+            <div className="bg-white rounded-3xl shadow-[0_20px_50px_rgba(8,_112,_184,_0.08)] border border-slate-100 p-8 sm:p-10 max-w-md w-full text-center my-auto relative z-10">
+                <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 ${percentage >= 50 ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
                     {percentage >= 50 ? (
                         <CheckCircle className="w-10 h-10" />
                     ) : (
@@ -971,23 +1024,23 @@ const Result = ({ score, totalQuestions, totalMarks, correct, wrong, notAttempte
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 mb-6 text-left">
-                    <div className="bg-blue-50/60 rounded-xl p-3 border border-blue-100">
+                    <div className="bg-blue-50/60 rounded-2xl p-3 border border-blue-100">
                         <div className="text-lg font-black text-[#4169e2]">{totalQuestions}</div>
                         <div className="text-[11px] font-semibold text-slate-600">Total Questions</div>
                     </div>
-                    <div className="bg-purple-50/60 rounded-xl p-3 border border-purple-100">
+                    <div className="bg-purple-50/60 rounded-2xl p-3 border border-purple-100">
                         <div className="text-lg font-black text-purple-600">{correct + wrong}</div>
                         <div className="text-[11px] font-semibold text-slate-600">Attempted</div>
                     </div>
-                    <div className="bg-green-50/60 rounded-xl p-3 border border-green-100">
-                        <div className="text-lg font-black text-green-600">{correct}</div>
+                    <div className="bg-emerald-50/60 rounded-2xl p-3 border border-emerald-100">
+                        <div className="text-lg font-black text-emerald-600">{correct}</div>
                         <div className="text-[11px] font-semibold text-slate-600">Correct</div>
                     </div>
-                    <div className="bg-red-50/60 rounded-xl p-3 border border-red-100">
+                    <div className="bg-red-50/60 rounded-2xl p-3 border border-red-100">
                         <div className="text-lg font-black text-red-600">{wrong}</div>
                         <div className="text-[11px] font-semibold text-slate-600">Wrong</div>
                     </div>
-                    <div className="bg-amber-50/60 rounded-xl p-3 border border-amber-100 col-span-2">
+                    <div className="bg-amber-50/60 rounded-2xl p-3 border border-amber-100 col-span-2">
                         <div className="text-lg font-black text-amber-600">{notAttempted}</div>
                         <div className="text-[11px] font-semibold text-slate-600">Not Attempted</div>
                     </div>
@@ -995,19 +1048,19 @@ const Result = ({ score, totalQuestions, totalMarks, correct, wrong, notAttempte
 
                 <button
                     onClick={onBackToList}
-                    className="w-full bg-[#4169e2] hover:bg-[#3557c5] text-white rounded-xl px-6 py-3.5 font-bold text-sm shadow-md shadow-blue-500/20 transition-all cursor-pointer"
+                    className="w-full bg-[#4169e2] hover:bg-[#3557c5] text-white rounded-2xl px-6 py-3.5 font-bold text-sm shadow-lg shadow-blue-500/25 transition-all cursor-pointer"
                 >
                     Back to Quiz List →
                 </button>
             </div>
 
-            <footer className="py-4 text-center text-sm font-medium text-slate-500">
+            <footer className="relative z-10 py-5 text-center text-sm font-medium text-slate-500">
                 made by{' '}
                 <a
                     href="https://zectral.vercel.app/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-bold text-[#4169e2] hover:text-[#3557c5] underline decoration-blue-300 underline-offset-4 transition-colors"
+                    className="font-bold text-[#4169e2] hover:text-[#3557c5] underline decoration-blue-300 underline-offset-4 hover:decoration-blue-500 transition-colors"
                 >
                     ZECTRAL
                 </a>
@@ -1081,7 +1134,7 @@ export default function QuizzApp() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#f1f5f9] flex items-center justify-center">
+            <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
                 <div className="text-center">
                     <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#4169e2] border-t-transparent"></div>
                     <p className="mt-4 text-sm font-bold text-slate-600">Loading Helix Club Quiz...</p>
