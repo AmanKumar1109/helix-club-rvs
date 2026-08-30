@@ -178,9 +178,20 @@ const Login = ({ onLogin }) => {
                 <h1 className="text-xl font-black text-white tracking-tight mt-1 mb-1">
                     Helix Club Quiz
                 </h1>
-                <p className="text-xs font-semibold tracking-widest text-slate-400 uppercase mb-8">
+                <p className="text-xs font-semibold tracking-widest text-slate-400 uppercase mb-1.5">
                     Assessment & Contest Portal
                 </p>
+                <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400 font-medium mb-7">
+                    <span>powered by</span>
+                    <a
+                        href="https://zectral.vercel.app/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-bold text-[#4169e2] hover:text-[#587ef0] underline decoration-blue-500/50 underline-offset-2 hover:decoration-blue-400 transition-colors"
+                    >
+                        ZECTRAL
+                    </a>
+                </div>
 
                 {/* Google Sign In Button with #4169e2 */}
                 <div className="space-y-4">
@@ -218,20 +229,8 @@ const Login = ({ onLogin }) => {
                 </div>
             </div>
 
-            {/* Bottom Footer - Made by ZECTRAL */}
-            <div className="relative z-10 py-4 text-center">
-                <p className="text-sm font-medium text-slate-500">
-                    made by{' '}
-                    <a
-                        href="https://zectral.vercel.app/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-bold text-[#4169e2] hover:text-[#587ef0] underline decoration-blue-500/50 underline-offset-4 hover:decoration-blue-400 transition-colors"
-                    >
-                        ZECTRAL
-                    </a>
-                </p>
-            </div>
+            {/* Bottom spacer */}
+            <div className="w-full h-2"></div>
         </div>
     );
 };
@@ -286,7 +285,18 @@ const UserDetails = ({ user, onComplete }) => {
                     <img src={logoImg} alt="Helix Logo" className="w-14 h-14 object-contain drop-shadow-[0_0_15px_rgba(65,105,226,0.3)]" />
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-1">Complete Your Profile</h2>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-6">Helix Club Quiz Registration</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Helix Club Quiz Registration</p>
+                <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400 font-medium mb-6">
+                    <span>powered by</span>
+                    <a
+                        href="https://zectral.vercel.app/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-bold text-[#4169e2] hover:text-[#587ef0] underline decoration-blue-500/50 underline-offset-2 hover:decoration-blue-400 transition-colors"
+                    >
+                        ZECTRAL
+                    </a>
+                </div>
 
                 <div className="space-y-5 text-left">
                     <div>
@@ -325,17 +335,8 @@ const UserDetails = ({ user, onComplete }) => {
                 </div>
             </div>
 
-            <footer className="py-4 text-center text-sm font-medium text-slate-500 relative z-10">
-                made by{' '}
-                <a
-                    href="https://zectral.vercel.app/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-bold text-[#4169e2] hover:text-[#587ef0] underline decoration-blue-500/50 underline-offset-4 transition-colors"
-                >
-                    ZECTRAL
-                </a>
-            </footer>
+            {/* Bottom spacer */}
+            <div className="w-full h-2"></div>
         </div>
     );
 };
@@ -490,7 +491,21 @@ const QuizList = ({ user, onLogout }) => {
                                         Official
                                     </span>
                                 </div>
-                                <p className="text-[11px] font-semibold text-slate-400 leading-tight hidden sm:block">Assessment & Contest Portal</p>
+                                <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-400 leading-tight">
+                                    <span className="hidden sm:inline">Assessment & Contest Portal</span>
+                                    <span className="hidden sm:inline">•</span>
+                                    <span className="flex items-center gap-1 text-slate-400">
+                                        powered by{' '}
+                                        <a
+                                            href="https://zectral.vercel.app/"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="font-bold text-[#4169e2] hover:text-[#587ef0] underline decoration-blue-500/50 underline-offset-2 hover:decoration-blue-400 transition-colors"
+                                        >
+                                            ZECTRAL
+                                        </a>
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
@@ -593,88 +608,64 @@ const QuizList = ({ user, onLogout }) => {
                                         <Award className="w-3.5 h-3.5" /> No Negative Marking
                                     </div>
                                     <div className="flex items-center gap-2 text-amber-300">
-                                        <Timer className="w-3.5 h-3.5" /> Auto-submit on Time Up
+                                        <Timer className="w-3.5 h-3.5" /> Real-time Countdown
+                                    </div>
+                                    <div className="flex items-center gap-2 text-emerald-300">
+                                        <Trophy className="w-3.5 h-3.5" /> Instant Scoring
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Filter Status Card (Dark) */}
-                        <div className="bg-[#131b2e]/90 rounded-3xl p-5 border border-slate-800 shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
-                            <div className="flex items-center justify-between mb-4">
-                                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300">Quick Filters</h4>
-                                {(statusFilter !== 'all' || searchQuery) && (
-                                    <button
-                                        onClick={() => { setStatusFilter('all'); setSearchQuery(''); }}
-                                        className="text-[11px] font-bold text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                    >
-                                        Reset
-                                    </button>
-                                )}
-                            </div>
-
-                            <div className="space-y-2">
-                                <button
-                                    onClick={() => setStatusFilter('all')}
-                                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${statusFilter === 'all' ? 'bg-[#4169e2] text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 text-slate-300'}`}
-                                >
-                                    <span>All Quizzes</span>
-                                    <span className={`px-2 py-0.5 rounded-full text-[10px] ${statusFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-300'}`}>{quizzes.length}</span>
-                                </button>
-                                <button
-                                    onClick={() => setStatusFilter('available')}
-                                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${statusFilter === 'available' ? 'bg-[#4169e2] text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 text-slate-300'}`}
-                                >
-                                    <span>Available (Unattempted)</span>
-                                    <span className={`px-2 py-0.5 rounded-full text-[10px] ${statusFilter === 'available' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-300'}`}>{availableCount}</span>
-                                </button>
-                                <button
-                                    onClick={() => setStatusFilter('completed')}
-                                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${statusFilter === 'completed' ? 'bg-[#4169e2] text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 text-slate-300'}`}
-                                >
-                                    <span>Completed (Submitted)</span>
-                                    <span className={`px-2 py-0.5 rounded-full text-[10px] ${statusFilter === 'completed' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-300'}`}>{completedCount}</span>
-                                </button>
+                        {/* Quick Stats Pill Panel */}
+                        <div className="bg-[#131b2e]/90 rounded-3xl p-5 border border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.3)] space-y-4">
+                            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Your Overview</h4>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 text-center">
+                                    <p className="text-xl font-black text-white">{quizzes.length}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase">Available</p>
+                                </div>
+                                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 text-center">
+                                    <p className="text-xl font-black text-emerald-400">{completedCount}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase">Submitted</p>
+                                </div>
                             </div>
                         </div>
                     </aside>
 
-                    {/* Right Main Grid Area */}
+                    {/* Right Quiz Grid */}
                     <main className="flex-1 min-w-0">
-                        {/* Section Header */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-800">
-                            <div className="flex items-center gap-3">
-                                <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                                    Available Quizzes
-                                </h2>
-                                <span className="px-3 py-0.5 bg-blue-950/80 text-blue-300 border border-blue-800/60 rounded-full text-xs font-black">
-                                    {filteredQuizzes.length}
-                                </span>
+                        {/* Section Header Controls */}
+                        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                            <div>
+                                <h2 className="text-xl font-black text-white tracking-tight">Active Tests & Quizzes</h2>
+                                <p className="text-xs text-slate-400 font-medium">Select an assessment to start your test</p>
                             </div>
 
-                            <div className="flex items-center gap-2 text-xs text-slate-400 font-semibold self-end sm:self-auto">
-                                <span>Sort by:</span>
+                            {/* Sort Dropdown */}
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs text-slate-400 font-bold">Sort:</span>
                                 <select
                                     value={sortBy}
                                     onChange={(e) => setSortBy(e.target.value)}
-                                    className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-200 font-bold focus:outline-none focus:ring-2 focus:ring-[#4169e2] cursor-pointer shadow-2xs"
+                                    className="bg-slate-900/90 border border-slate-700/80 rounded-xl px-3 py-1.5 text-xs text-white font-semibold focus:outline-none focus:ring-2 focus:ring-[#4169e2] cursor-pointer"
                                 >
-                                    <option value="latest">Latest</option>
+                                    <option value="latest">Latest First</option>
                                     <option value="marks">Highest Marks</option>
                                     <option value="duration">Shortest Duration</option>
                                 </select>
                             </div>
                         </div>
 
-                        {/* Quiz Cards */}
+                        {/* Quiz Cards Grid */}
                         {loading ? (
-                            <div className="text-center py-16 bg-[#131b2e]/90 rounded-3xl border border-slate-800 shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
-                                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#4169e2] border-t-transparent"></div>
-                                <p className="mt-4 text-sm font-semibold text-slate-400">Loading quizzes...</p>
+                            <div className="py-20 text-center">
+                                <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-[#4169e2] border-t-transparent mb-3"></div>
+                                <p className="text-xs font-bold text-slate-400">Loading Available Quizzes...</p>
                             </div>
                         ) : filteredQuizzes.length === 0 ? (
-                            <div className="text-center py-16 bg-[#131b2e]/90 rounded-3xl border border-slate-800 p-8 shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
-                                <div className="w-16 h-16 bg-slate-800/80 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+                            <div className="bg-[#131b2e]/90 rounded-3xl border border-slate-800 p-12 text-center shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+                                <div className="w-16 h-16 bg-blue-950/80 border border-blue-800 text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
                                     <BookOpen className="w-8 h-8" />
                                 </div>
                                 <h3 className="text-base font-bold text-white mb-1">No Quizzes Found</h3>
@@ -764,18 +755,8 @@ const QuizList = ({ user, onLogout }) => {
                 </div>
             </div>
 
-            {/* Bottom Footer - Made by ZECTRAL */}
-            <footer className="relative z-10 py-5 text-center text-sm font-medium text-slate-500 border-t border-slate-800/80 bg-[#0b0f17]/90 backdrop-blur-xs">
-                made by{' '}
-                <a
-                    href="https://zectral.vercel.app/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-bold text-[#4169e2] hover:text-[#587ef0] underline decoration-blue-500/50 underline-offset-4 hover:decoration-blue-400 transition-colors"
-                >
-                    ZECTRAL
-                </a>
-            </footer>
+            {/* Bottom spacer */}
+            <div className="w-full h-2"></div>
         </div>
     );
 };
@@ -966,8 +947,20 @@ const Quiz = ({ user, quiz, onComplete }) => {
                             <img src={logoImg} alt="Helix Logo" className="w-8 h-8 object-contain drop-shadow-[0_0_12px_rgba(65,105,226,0.35)]" />
                             <div>
                                 <h2 className="text-base sm:text-lg font-bold text-white leading-tight">{quiz.name}</h2>
-                                <p className="text-xs text-slate-400 font-medium">
-                                    Question {currentQuestion + 1} of {quiz.questions.length} • Helix Club Quiz
+                                <p className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
+                                    <span>Question {currentQuestion + 1} of {quiz.questions.length}</span>
+                                    <span>•</span>
+                                    <span className="flex items-center gap-1 text-slate-400">
+                                        powered by{' '}
+                                        <a
+                                            href="https://zectral.vercel.app/"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="font-bold text-[#4169e2] hover:text-[#587ef0] underline decoration-blue-500/50 underline-offset-2 hover:decoration-blue-400 transition-colors"
+                                        >
+                                            ZECTRAL
+                                        </a>
+                                    </span>
                                 </p>
                             </div>
                         </div>
@@ -1148,18 +1141,8 @@ const Quiz = ({ user, quiz, onComplete }) => {
                 </div>
             )}
 
-            {/* Bottom Footer */}
-            <footer className="relative z-10 py-5 text-center text-sm font-medium text-slate-500 border-t border-slate-800/80 bg-[#0b0f17]/90 backdrop-blur-xs">
-                made by{' '}
-                <a
-                    href="https://zectral.vercel.app/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-bold text-[#4169e2] hover:text-[#587ef0] underline decoration-blue-500/50 underline-offset-4 hover:decoration-blue-400 transition-colors"
-                >
-                    ZECTRAL
-                </a>
-            </footer>
+            {/* Bottom spacer */}
+            <div className="w-full h-2"></div>
         </div>
     );
 };
@@ -1200,7 +1183,18 @@ const Result = ({ score, totalQuestions, totalMarks, correct, wrong, notAttempte
                 </div>
 
                 <h2 className="text-2xl font-black text-white mb-1">Quiz Completed!</h2>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-6">Helix Club Quiz Submission</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Helix Club Quiz Submission</p>
+                <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400 font-medium mb-6">
+                    <span>powered by</span>
+                    <a
+                        href="https://zectral.vercel.app/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-bold text-[#4169e2] hover:text-[#587ef0] underline decoration-blue-500/50 underline-offset-2 hover:decoration-blue-400 transition-colors"
+                    >
+                        ZECTRAL
+                    </a>
+                </div>
 
                 <div className="bg-slate-900/90 rounded-2xl p-6 mb-6 border border-slate-800">
                     <div className="text-4xl font-black text-[#4169e2] mb-1">{score}</div>
@@ -1239,17 +1233,8 @@ const Result = ({ score, totalQuestions, totalMarks, correct, wrong, notAttempte
                 </button>
             </div>
 
-            <footer className="relative z-10 py-5 text-center text-sm font-medium text-slate-500">
-                made by{' '}
-                <a
-                    href="https://zectral.vercel.app/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-bold text-[#4169e2] hover:text-[#587ef0] underline decoration-blue-500/50 underline-offset-4 hover:decoration-blue-400 transition-colors"
-                >
-                    ZECTRAL
-                </a>
-            </footer>
+            {/* Bottom spacer */}
+            <div className="w-full h-2"></div>
         </div>
     );
 };
@@ -1354,7 +1339,13 @@ export const QuizTakeScreen = () => {
                     <div className="w-16 h-16 bg-red-950/80 border border-red-800 text-red-400 rounded-2xl flex items-center justify-center mx-auto mb-4">
                         <XCircle className="w-8 h-8" />
                     </div>
-                    <h2 className="text-xl font-bold text-white mb-2">Quiz Not Found</h2>
+                    <h2 className="text-xl font-bold text-white mb-1">Quiz Not Found</h2>
+                    <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400 font-medium mb-4">
+                        <span>powered by</span>
+                        <a href="https://zectral.vercel.app/" target="_blank" rel="noopener noreferrer" className="font-bold text-[#4169e2] underline">
+                            ZECTRAL
+                        </a>
+                    </div>
                     <p className="text-xs text-slate-400 mb-6">{error}</p>
                     <button
                         onClick={() => navigate('/')}
@@ -1363,12 +1354,7 @@ export const QuizTakeScreen = () => {
                         ← Back to All Quizzes
                     </button>
                 </div>
-                <footer className="py-4 text-center text-sm font-medium text-slate-500">
-                    made by{' '}
-                    <a href="https://zectral.vercel.app/" target="_blank" rel="noopener noreferrer" className="font-bold text-[#4169e2] underline">
-                        ZECTRAL
-                    </a>
-                </footer>
+                <div className="w-full h-2"></div>
             </div>
         );
     }
@@ -1382,6 +1368,12 @@ export const QuizTakeScreen = () => {
                         <CheckCircle className="w-8 h-8" />
                     </div>
                     <h2 className="text-xl font-bold text-white mb-1">Already Submitted!</h2>
+                    <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400 font-medium mb-3">
+                        <span>powered by</span>
+                        <a href="https://zectral.vercel.app/" target="_blank" rel="noopener noreferrer" className="font-bold text-[#4169e2] underline">
+                            ZECTRAL
+                        </a>
+                    </div>
                     <p className="text-xs text-slate-400 mb-6">You have already completed this test.</p>
 
                     <div className="bg-slate-900/90 p-5 rounded-2xl mb-6 border border-slate-800">
@@ -1398,12 +1390,7 @@ export const QuizTakeScreen = () => {
                         ← Back to Quiz Dashboard
                     </button>
                 </div>
-                <footer className="py-4 text-center text-sm font-medium text-slate-500">
-                    made by{' '}
-                    <a href="https://zectral.vercel.app/" target="_blank" rel="noopener noreferrer" className="font-bold text-[#4169e2] underline">
-                        ZECTRAL
-                    </a>
-                </footer>
+                <div className="w-full h-2"></div>
             </div>
         );
     }

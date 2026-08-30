@@ -113,9 +113,20 @@ const AdminLogin = ({ onLogin }) => {
                 <h1 className="text-xl font-black text-white tracking-tight mt-1 mb-1">
                     Helix Club Quiz
                 </h1>
-                <p className="text-xs font-semibold tracking-widest text-blue-400 uppercase mb-6">
+                <p className="text-xs font-semibold tracking-widest text-blue-400 uppercase mb-1.5">
                     Admin Management Portal
                 </p>
+                <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400 font-medium mb-6">
+                    <span>powered by</span>
+                    <a
+                        href="https://zectral.vercel.app/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-bold text-[#4169e2] hover:text-[#587ef0] underline decoration-blue-500/50 underline-offset-2 hover:decoration-blue-400 transition-colors"
+                    >
+                        ZECTRAL
+                    </a>
+                </div>
 
                 {error && (
                     <div className="mb-4 p-3 bg-red-950/80 border border-red-800 rounded-xl text-xs font-bold text-red-400 flex items-center justify-center gap-2">
@@ -183,20 +194,8 @@ const AdminLogin = ({ onLogin }) => {
                 </div>
             </div>
 
-            {/* Bottom Footer - Made by ZECTRAL */}
-            <div className="relative z-10 py-4 text-center">
-                <p className="text-sm font-medium text-slate-500">
-                    made by{' '}
-                    <a
-                        href="https://zectral.vercel.app/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-bold text-[#4169e2] hover:text-[#587ef0] underline decoration-blue-500/50 underline-offset-4 hover:decoration-blue-400 transition-colors"
-                    >
-                        ZECTRAL
-                    </a>
-                </p>
-            </div>
+            {/* Bottom spacer */}
+            <div className="w-full h-2"></div>
         </div>
     );
 };
@@ -990,6 +989,18 @@ const AdminDashboard = ({ adminUser, onLogout }) => {
                                     <div className="flex items-center gap-2">
                                         <span className="font-black text-lg text-white leading-tight">Helix Club Quiz</span>
                                         <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 bg-blue-950/80 text-blue-400 font-bold rounded-full border border-blue-800/60">Admin Portal</span>
+                                        <span className="text-xs text-slate-400 hidden sm:inline">•</span>
+                                        <span className="hidden sm:flex items-center gap-1 text-xs text-slate-400 font-semibold">
+                                            powered by{' '}
+                                            <a
+                                                href="https://zectral.vercel.app/"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="font-bold text-[#4169e2] hover:text-[#587ef0] underline decoration-blue-500/50 underline-offset-2 hover:decoration-blue-400 transition-colors"
+                                            >
+                                                ZECTRAL
+                                            </a>
+                                        </span>
                                     </div>
                                     <p className="text-xs text-slate-400">{adminUser.email}</p>
                                 </div>
@@ -1075,17 +1086,8 @@ const AdminDashboard = ({ adminUser, onLogout }) => {
                 </div>
             </div>
 
-            <footer className="py-6 text-center text-sm font-medium text-slate-500 border-t border-slate-800/80 mt-12 bg-[#0b0f17]/90 backdrop-blur-xs">
-                made by{' '}
-                <a
-                    href="https://zectral.vercel.app/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-bold text-[#4169e2] hover:text-[#587ef0] underline decoration-blue-500/50 underline-offset-4 hover:decoration-blue-400 transition-colors"
-                >
-                    ZECTRAL
-                </a>
-            </footer>
+            {/* Bottom spacer */}
+            <div className="w-full h-2"></div>
         </div>
     );
 };
