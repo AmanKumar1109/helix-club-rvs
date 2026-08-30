@@ -4,7 +4,6 @@ import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signO
 import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, query, where, serverTimestamp } from 'firebase/firestore';
 import { Clock, LogOut, ChevronRight, Trophy, User, Hash, BookOpen, Award, Timer, CheckCircle, XCircle, Sparkles, ShieldCheck } from 'lucide-react';
 import logoImg from './assets/logo.png';
-import helixTextImg from './assets/helix-text.png';
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -145,20 +144,11 @@ const Login = ({ onLogin }) => {
             {/* Center Modern Login Card */}
             <div className="w-full max-w-md bg-white rounded-3xl shadow-[0_20px_50px_rgba(8,_112,_184,_0.08)] border border-slate-100 p-8 sm:p-10 relative z-10 my-auto text-center transition-all">
                 {/* Helix Logo */}
-                <div className="flex justify-center mb-3">
+                <div className="flex justify-center mb-4">
                     <img
                         src={logoImg}
                         alt="Helix Logo"
-                        className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-sm hover:scale-105 transition-transform duration-300"
-                    />
-                </div>
-
-                {/* Helix Text Branding */}
-                <div className="flex justify-center mb-1">
-                    <img
-                        src={helixTextImg}
-                        alt="Helix"
-                        className="h-8 sm:h-9 object-contain"
+                        className="w-18 h-18 sm:w-20 sm:h-20 object-contain drop-shadow-md hover:scale-105 transition-transform duration-300"
                     />
                 </div>
 
@@ -256,8 +246,8 @@ const UserDetails = ({ user, onComplete }) => {
     return (
         <div className="min-h-screen bg-[#f8fafc] flex flex-col justify-between items-center p-4 sm:p-6 font-sans">
             <div className="w-full max-w-md bg-white rounded-3xl shadow-[0_20px_50px_rgba(8,_112,_184,_0.08)] border border-slate-100 p-8 sm:p-10 my-auto text-center">
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-blue-50 p-2 border border-blue-100 shadow-sm">
-                    <img src={logoImg} alt="Helix Logo" className="w-12 h-12 object-contain" />
+                <div className="flex justify-center mb-4">
+                    <img src={logoImg} alt="Helix Logo" className="w-14 h-14 object-contain drop-shadow-sm" />
                 </div>
                 <h2 className="text-2xl font-bold text-slate-900 mb-1">Complete Your Profile</h2>
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-6">Helix Club Quiz Registration</p>
@@ -435,15 +425,22 @@ const QuizList = ({ user, onStartQuiz, onLogout }) => {
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
                         {/* Logo & Portal Name */}
                         <div className="flex items-center gap-3">
-                            <img src={logoImg} alt="Helix Logo" className="w-9 h-9 object-contain drop-shadow-xs" />
-                            <div className="flex items-center gap-2">
-                                <img src={helixTextImg} alt="Helix" className="h-6 object-contain hidden sm:block" />
-                                <span className="font-extrabold text-lg sm:text-xl tracking-tight text-slate-900">
-                                    Helix Club Quiz
-                                </span>
-                                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-blue-50 text-[#4169e2] border border-blue-200/60 rounded-full">
-                                    Official
-                                </span>
+                            <img
+                                src={logoImg}
+                                alt="Helix Logo"
+                                className="w-9 h-9 sm:w-10 sm:h-10 object-contain drop-shadow-xs hover:scale-105 transition-transform duration-200"
+                            />
+
+                            <div className="flex flex-col justify-center">
+                                <div className="flex items-center gap-2">
+                                    <span className="font-black text-lg sm:text-xl tracking-tight text-slate-900 leading-tight">
+                                        Helix Club Quiz
+                                    </span>
+                                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-blue-50 text-[#4169e2] border border-blue-200/60 rounded-full">
+                                        Official
+                                    </span>
+                                </div>
+                                <p className="text-[11px] font-semibold text-slate-400 leading-tight hidden sm:block">Assessment & Contest Portal</p>
                             </div>
                         </div>
 
@@ -848,9 +845,9 @@ const Quiz = ({ user, quiz, onComplete }) => {
             <div className="relative z-10 flex-1">
                 {/* Header (Clean White Glassmorphic - No Black) */}
                 <div className="bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-20 shadow-xs">
-                    <div className="max-w-5xl mx-auto px-4 py-3.5 flex justify-between items-center">
+                    <div className="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
                         <div className="flex items-center gap-3">
-                            <img src={logoImg} alt="Helix Logo" className="w-8 h-8 object-contain" />
+                            <img src={logoImg} alt="Helix Logo" className="w-8 h-8 object-contain drop-shadow-xs" />
                             <div>
                                 <h2 className="text-base sm:text-lg font-bold text-slate-900 leading-tight">{quiz.name}</h2>
                                 <p className="text-xs text-slate-500 font-medium">

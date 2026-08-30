@@ -4,7 +4,6 @@ import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signO
 import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
 import { Clock, LogOut, AlertCircle, Trophy, User, Hash, Award, Timer, TrendingUp, Users, Activity, Plus, Eye, BarChart3, Target, Edit2, Save, X, Filter, ShieldCheck } from 'lucide-react';
 import logoImg from './assets/logo.png';
-import helixTextImg from './assets/helix-text.png';
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -69,20 +68,11 @@ const AdminLogin = ({ onLogin }) => {
 
             <div className="w-full max-w-md bg-white rounded-3xl shadow-[0_20px_50px_rgba(8,_112,_184,_0.08)] border border-slate-100 p-8 sm:p-10 relative z-10 my-auto text-center">
                 {/* Helix Logo */}
-                <div className="flex justify-center mb-3">
+                <div className="flex justify-center mb-4">
                     <img
                         src={logoImg}
                         alt="Helix Logo"
-                        className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-sm hover:scale-105 transition-transform duration-300"
-                    />
-                </div>
-
-                {/* Helix Text Branding */}
-                <div className="flex justify-center mb-1">
-                    <img
-                        src={helixTextImg}
-                        alt="Helix"
-                        className="h-8 sm:h-9 object-contain"
+                        className="w-18 h-18 sm:w-20 sm:h-20 object-contain drop-shadow-md hover:scale-105 transition-transform duration-300"
                     />
                 </div>
 
@@ -782,10 +772,14 @@ const AdminDashboard = ({ adminUser, onLogout }) => {
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
                         <div className="flex justify-between items-center">
                             <div className="flex items-center gap-3">
-                                <img src={logoImg} alt="Helix Logo" className="w-10 h-10 object-contain drop-shadow-sm" />
+                                <img
+                                    src={logoImg}
+                                    alt="Helix Logo"
+                                    className="w-9 h-9 sm:w-10 sm:h-10 object-contain drop-shadow-xs hover:scale-105 transition-transform duration-200"
+                                />
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <img src={helixTextImg} alt="Helix" className="h-5 object-contain" />
+                                        <span className="font-black text-lg text-slate-900 leading-tight">Helix Club Quiz</span>
                                         <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 bg-purple-100 text-purple-700 font-bold rounded-full">Admin Portal</span>
                                     </div>
                                     <p className="text-xs text-slate-500">{adminUser.email}</p>
