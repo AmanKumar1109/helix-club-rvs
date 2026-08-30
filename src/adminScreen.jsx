@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
-import { Clock, LogOut, AlertCircle, Trophy, User, Hash, Award, Timer, TrendingUp, Users, Activity, Plus, Eye, BarChart3, Target, Edit2, Save, X, Filter, ShieldCheck, Search, Mail } from 'lucide-react';
+import { Clock, LogOut, AlertCircle, Trophy, User, Hash, Award, Timer, TrendingUp, Users, Activity, Plus, Eye, EyeOff, Lock, BarChart3, Target, Edit2, Save, X, Filter, ShieldCheck, Search, Mail } from 'lucide-react';
 import logoImg from './assets/logo.png';
 
 // Firebase Configuration
@@ -20,20 +20,33 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Admin Login Component
+// Admin Login Component with Hardcoded Credentials (Email: admin@admin.com / Password: helix@rvs@9234@aman)
 const AdminLogin = ({ onLogin }) => {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const handleGoogleLogin = async () => {
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        setError('');
         setLoading(true);
-        try {
-            const provider = new GoogleAuthProvider();
-            const result = await signInWithPopup(auth, provider);
-            onLogin(result.user);
-        } catch (error) {
-            console.error('Login error:', error);
-            alert('Login failed. Please try again.');
-        } finally {
+
+        const cleanEmail = email.trim().toLowerCase();
+        const cleanPass = password.trim();
+
+        if (cleanEmail === 'admin@admin.com' && cleanPass === 'helix@rvs@9234@aman') {
+            const adminData = {
+                email: 'admin@admin.com',
+                displayName: 'Helix Super Admin',
+                role: 'administrator',
+                loginTime: new Date().toISOString()
+            };
+            localStorage.setItem('helix_admin_user', JSON.stringify(adminData));
+            onLogin(adminData);
+        } else {
+            setError('Invalid Admin Email or Password! Access Denied.');
             setLoading(false);
         }
     };
@@ -80,41 +93,72 @@ const AdminLogin = ({ onLogin }) => {
                 <h1 className="text-xl font-black text-slate-900 tracking-tight mt-1 mb-1">
                     Helix Club Quiz
                 </h1>
-                <p className="text-xs font-semibold tracking-widest text-purple-600 uppercase mb-8">
+                <p className="text-xs font-semibold tracking-widest text-purple-600 uppercase mb-6">
                     Admin Management Portal
                 </p>
 
-                <div className="space-y-4">
+                {error && (
+                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-xs font-bold text-red-600 flex items-center justify-center gap-2">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <span>{error}</span>
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-4 text-left">
+                    <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                            Admin Email
+                        </label>
+                        <div className="relative">
+                            <input
+                                type="email"
+                                required
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="admin@admin.com"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#4169e2] focus:bg-white shadow-2xs transition-all"
+                            />
+                            <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                            Password
+                        </label>
+                        <div className="relative">
+                            <input
+                                type={showPassword ? 'text' : 'password'}
+                                required
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="••••••••••••"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-10 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#4169e2] focus:bg-white shadow-2xs transition-all"
+                            />
+                            <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                            >
+                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                        </div>
+                    </div>
+
                     <button
-                        onClick={handleGoogleLogin}
+                        type="submit"
                         disabled={loading}
-                        className="w-full bg-[#4169e2] hover:bg-[#3557c5] active:scale-[0.99] text-white rounded-2xl px-6 py-3.5 font-bold text-sm sm:text-base shadow-lg shadow-blue-500/25 flex items-center justify-center gap-3 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        className="w-full mt-2 bg-[#4169e2] hover:bg-[#3557c5] active:scale-[0.99] text-white rounded-2xl px-6 py-3.5 font-bold text-sm sm:text-base shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-50 cursor-pointer"
                     >
-                        {loading ? (
-                            <div className="flex items-center gap-2">
-                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                <span>Signing in...</span>
-                            </div>
-                        ) : (
-                            <>
-                                <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center p-1 shadow-sm shrink-0">
-                                    <svg className="w-4 h-4" viewBox="0 0 24 24">
-                                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                                    </svg>
-                                </div>
-                                <span className="tracking-wider">SIGN IN WITH GOOGLE</span>
-                            </>
-                        )}
+                        {loading ? 'Authenticating...' : 'Sign In as Administrator →'}
                     </button>
-                </div>
+                </form>
 
                 <div className="mt-6 p-3 bg-slate-50 border border-slate-200 rounded-xl">
                     <p className="text-xs text-slate-600 text-center font-medium flex items-center justify-center gap-1.5">
                         <ShieldCheck className="w-4 h-4 text-[#4169e2] shrink-0" />
-                        Admin Access Enabled for All Accounts
+                        Restricted Access • Administrator Only
                     </p>
                 </div>
             </div>
@@ -1006,37 +1050,22 @@ const AdminDashboard = ({ adminUser, onLogout }) => {
 
 // Main App Component
 export default function AdminApp() {
-    const [admin, setAdmin] = useState(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            setAdmin(user);
-            setLoading(false);
-        });
-
-        return () => unsubscribe();
-    }, []);
-
-    const handleLogout = async () => {
-        try {
-            await signOut(auth);
-            setAdmin(null);
-        } catch (error) {
-            console.error('Logout error:', error);
+    const [admin, setAdmin] = useState(() => {
+        const saved = localStorage.getItem('helix_admin_user');
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch {
+                return null;
+            }
         }
-    };
+        return null;
+    });
 
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-purple-600 mb-4"></div>
-                    <p className="text-gray-600 font-medium">Loading Admin Panel...</p>
-                </div>
-            </div>
-        );
-    }
+    const handleLogout = () => {
+        localStorage.removeItem('helix_admin_user');
+        setAdmin(null);
+    };
 
     if (!admin) {
         return <AdminLogin onLogin={setAdmin} />;
