@@ -341,7 +341,7 @@ const UserDetails = ({ user, onComplete }) => {
     );
 };
 
-// Quiz List Component (Matching Login Screen Aesthetic)
+// Quiz List Component (Matching Login Screen Aesthetic & Rich GSAP Animations)
 const QuizList = ({ user, onLogout }) => {
     const navigate = useNavigate();
     const [quizzes, setQuizzes] = useState([]);
@@ -350,20 +350,98 @@ const QuizList = ({ user, onLogout }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'available', 'completed'
     const [sortBy, setSortBy] = useState('latest'); // 'latest', 'marks', 'duration'
+    
+    // GSAP Animation References
+    const headerRef = useRef(null);
+    const sidebarRef = useRef(null);
     const gridRef = useRef(null);
+    const mainHeaderRef = useRef(null);
+    const backgroundRef = useRef(null);
 
     useEffect(() => {
         loadQuizzesAndSubmissions();
     }, [user]);
 
+    // Initial Screen Load GSAP Animations (Header, Sidebar, Ambient floating elements)
+    useEffect(() => {
+        // 1. Ambient Background Floating Spheres & Organic Blobs
+        if (backgroundRef.current) {
+            const floaters = backgroundRef.current.querySelectorAll('.gsap-floating-orb');
+            if (floaters.length > 0) {
+                gsap.to(floaters, {
+                    y: '-=18',
+                    x: '+=10',
+                    rotation: 8,
+                    duration: 3.8,
+                    repeat: -1,
+                    yoyo: true,
+                    ease: 'sine.inOut',
+                    stagger: {
+                        each: 0.6,
+                        from: 'random'
+                    }
+                });
+            }
+
+            const blobs = backgroundRef.current.querySelectorAll('.gsap-fluid-blob');
+            if (blobs.length > 0) {
+                gsap.to(blobs, {
+                    scale: 1.08,
+                    rotation: 5,
+                    duration: 6,
+                    repeat: -1,
+                    yoyo: true,
+                    ease: 'sine.inOut',
+                    stagger: 1.2
+                });
+            }
+        }
+
+        // 2. Top Header Glass Navbar Staggered Slide In
+        if (headerRef.current) {
+            gsap.fromTo(
+                headerRef.current.children,
+                { opacity: 0, y: -20 },
+                { opacity: 1, y: 0, duration: 0.5, stagger: 0.08, ease: 'power3.out' }
+            );
+        }
+
+        // 3. Left Sidebar Staggered Pop-in
+        if (sidebarRef.current) {
+            gsap.fromTo(
+                sidebarRef.current.children,
+                { opacity: 0, x: -30, scale: 0.96 },
+                { opacity: 1, x: 0, scale: 1, duration: 0.6, stagger: 0.12, ease: 'back.out(1.2)', delay: 0.1 }
+            );
+        }
+
+        // 4. Section Controls Fade In
+        if (mainHeaderRef.current) {
+            gsap.fromTo(
+                mainHeaderRef.current,
+                { opacity: 0, y: 15 },
+                { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out', delay: 0.2 }
+            );
+        }
+    }, []);
+
+    // Staggered Entrance for Quiz Cards on Data / Filter / Search updates
     useEffect(() => {
         if (!loading && gridRef.current) {
             const cards = gridRef.current.querySelectorAll('.gsap-quiz-card');
             if (cards.length > 0) {
                 gsap.fromTo(
                     cards,
-                    { opacity: 0, y: 30, scale: 0.96 },
-                    { opacity: 1, y: 0, scale: 1, duration: 0.45, stagger: 0.06, ease: 'power2.out' }
+                    { opacity: 0, y: 30, scale: 0.94 },
+                    { 
+                        opacity: 1, 
+                        y: 0, 
+                        scale: 1, 
+                        duration: 0.48, 
+                        stagger: 0.07, 
+                        ease: 'back.out(1.2)',
+                        clearProps: 'transform' // clean transform property after GSAP finishes for flawless CSS hover effects
+                    }
                 );
             }
         }
@@ -442,36 +520,38 @@ const QuizList = ({ user, onLogout }) => {
 
     return (
         <div className="min-h-screen bg-[#0b0f17] flex flex-col justify-between font-sans w-full relative overflow-hidden text-slate-100">
-            {/* Ambient Background Gradient Blurs (Dark Glow) */}
-            <div className="absolute top-1/6 -left-20 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
-            <div className="absolute top-1/3 -right-20 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
-            <div className="absolute bottom-1/4 left-1/3 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            {/* Ambient Background Gradient Blurs & GSAP Animated Floating Elements */}
+            <div ref={backgroundRef} className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+                <div className="absolute top-1/6 -left-20 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl"></div>
+                <div className="absolute top-1/3 -right-20 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl"></div>
+                <div className="absolute bottom-1/4 left-1/3 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl"></div>
 
-            {/* Left Organic Fluid Blob */}
-            <div className="absolute -left-16 sm:-left-8 top-1/4 w-72 sm:w-96 h-72 sm:h-96 pointer-events-none select-none z-0 opacity-15">
-                <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-blue-500 fill-current">
-                    <path d="M44.7,-76.4C58.8,-69.2,71.8,-59.1,79.6,-45.8C87.4,-32.6,90,-16.3,88.5,-0.9C87,14.6,81.4,29.1,73.1,42.2C64.8,55.3,53.8,66.9,40.4,74.1C27.1,81.3,13.5,84.1,-0.5,85C-14.6,85.8,-29.1,84.7,-42.2,78.2C-55.3,71.8,-66.9,60,-74.8,46.1C-82.7,32.2,-86.8,16.1,-86.3,0.3C-85.8,-15.6,-80.6,-31.1,-71.9,-43.8C-63.1,-56.4,-50.7,-66.1,-37.2,-73.6C-23.7,-81,-11.8,-86.1,1.7,-89C15.3,-92,30.6,-83.6,44.7,-76.4Z" transform="translate(100 100)" />
-                </svg>
+                {/* Left Organic Fluid Blob */}
+                <div className="gsap-fluid-blob absolute -left-16 sm:-left-8 top-1/4 w-72 sm:w-96 h-72 sm:h-96 opacity-15">
+                    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-blue-500 fill-current">
+                        <path d="M44.7,-76.4C58.8,-69.2,71.8,-59.1,79.6,-45.8C87.4,-32.6,90,-16.3,88.5,-0.9C87,14.6,81.4,29.1,73.1,42.2C64.8,55.3,53.8,66.9,40.4,74.1C27.1,81.3,13.5,84.1,-0.5,85C-14.6,85.8,-29.1,84.7,-42.2,78.2C-55.3,71.8,-66.9,60,-74.8,46.1C-82.7,32.2,-86.8,16.1,-86.3,0.3C-85.8,-15.6,-80.6,-31.1,-71.9,-43.8C-63.1,-56.4,-50.7,-66.1,-37.2,-73.6C-23.7,-81,-11.8,-86.1,1.7,-89C15.3,-92,30.6,-83.6,44.7,-76.4Z" transform="translate(100 100)" />
+                    </svg>
+                </div>
+
+                {/* Right Organic Fluid Blob */}
+                <div className="gsap-fluid-blob absolute -right-16 sm:-right-8 top-1/3 w-80 sm:w-112 h-80 sm:h-112 opacity-15">
+                    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-indigo-500 fill-current">
+                        <path d="M47.7,-79.8C61.4,-73.4,71.9,-59.9,78.4,-44.8C84.8,-29.7,87.2,-14.8,85.4,0.1C83.5,14.9,77.4,29.8,69.5,43.2C61.7,56.5,52.1,68.3,39.6,75.7C27.1,83.1,11.7,86.1,-3.8,92.7C-19.3,99.3,-34.9,109.5,-47.9,104.9C-60.9,100.3,-71.4,80.9,-78.9,64.2C-86.4,47.5,-90.9,33.5,-91.9,19.2C-92.9,4.9,-90.4,-9.7,-84.9,-23.4C-79.3,-37.1,-70.7,-49.9,-59,-57.2C-47.3,-64.5,-32.5,-66.3,-18.4,-72.1C-4.3,-77.9,9,-87.7,24,-89.8C38.9,-91.9,55.5,-86.3,47.7,-79.8Z" transform="translate(100 100)" />
+                    </svg>
+                </div>
+
+                {/* Decorative Floating Circles & Geometric Elements */}
+                <div className="gsap-floating-orb absolute top-20 right-1/4 w-20 h-20 rounded-full border border-blue-500/20"></div>
+                <div className="gsap-floating-orb absolute top-36 left-1/3 w-3.5 h-3.5 rounded-full bg-indigo-500/40"></div>
+                <div className="gsap-floating-orb absolute top-44 left-10 sm:left-24 w-8 h-8 bg-blue-500/20 rotate-12 rounded-lg"></div>
+                <div className="gsap-floating-orb absolute bottom-36 right-12 sm:right-28 w-6 h-6 bg-indigo-500/20 rotate-45 rounded-sm"></div>
+                <div className="gsap-floating-orb absolute bottom-28 left-16 w-12 h-12 rounded-full border border-blue-400/20"></div>
             </div>
-
-            {/* Right Organic Fluid Blob */}
-            <div className="absolute -right-16 sm:-right-8 top-1/3 w-80 sm:w-112 h-80 sm:h-112 pointer-events-none select-none z-0 opacity-15">
-                <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-indigo-500 fill-current">
-                    <path d="M47.7,-79.8C61.4,-73.4,71.9,-59.9,78.4,-44.8C84.8,-29.7,87.2,-14.8,85.4,0.1C83.5,14.9,77.4,29.8,69.5,43.2C61.7,56.5,52.1,68.3,39.6,75.7C27.1,83.1,11.7,86.1,-3.8,92.7C-19.3,99.3,-34.9,109.5,-47.9,104.9C-60.9,100.3,-71.4,80.9,-78.9,64.2C-86.4,47.5,-90.9,33.5,-91.9,19.2C-92.9,4.9,-90.4,-9.7,-84.9,-23.4C-79.3,-37.1,-70.7,-49.9,-59,-57.2C-47.3,-64.5,-32.5,-66.3,-18.4,-72.1C-4.3,-77.9,9,-87.7,24,-89.8C38.9,-91.9,55.5,-86.3,47.7,-79.8Z" transform="translate(100 100)" />
-                </svg>
-            </div>
-
-            {/* Decorative Floating Circles & Geometric Elements */}
-            <div className="absolute top-20 right-1/4 w-20 h-20 rounded-full border border-blue-500/20 pointer-events-none"></div>
-            <div className="absolute top-36 left-1/3 w-3.5 h-3.5 rounded-full bg-indigo-500/40 pointer-events-none"></div>
-            <div className="absolute top-44 left-10 sm:left-24 w-8 h-8 bg-blue-500/20 rotate-12 rounded-lg pointer-events-none"></div>
-            <div className="absolute bottom-36 right-12 sm:right-28 w-6 h-6 bg-indigo-500/20 rotate-45 rounded-sm pointer-events-none"></div>
-            <div className="absolute bottom-28 left-16 w-12 h-12 rounded-full border border-blue-400/20 pointer-events-none"></div>
 
             {/* Full-width Main Wrapper */}
             <div className="w-full flex-1 relative z-10">
                 {/* 1. Modern Dark Glassmorphic Navbar */}
-                <header className="bg-[#0f172a]/90 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-30 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+                <header ref={headerRef} className="bg-[#0f172a]/90 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-30 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
                     {/* Top Row: Brand & Navigation */}
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
                         {/* Logo & Portal Name */}
@@ -584,7 +664,7 @@ const QuizList = ({ user, onLogout }) => {
                 {/* 2. Main Content Body Area (Left Sidebar + Right Quiz Grid) */}
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col lg:flex-row gap-8">
                     {/* Left Sidebar */}
-                    <aside className="w-full lg:w-72 shrink-0 space-y-6">
+                    <aside ref={sidebarRef} className="w-full lg:w-72 shrink-0 space-y-6">
                         {/* Vibrant Dark Blue Hero Card */}
                         <div className="bg-gradient-to-br from-[#1e293b] via-[#0f172a] to-[#1e1b4b] text-white rounded-3xl p-6 relative overflow-hidden shadow-[0_15px_35px_rgba(0,0,0,0.5)] border border-blue-500/25">
                             {/* Abstract Geometric Circle Elements in background */}
@@ -636,7 +716,7 @@ const QuizList = ({ user, onLogout }) => {
                     {/* Right Quiz Grid */}
                     <main className="flex-1 min-w-0">
                         {/* Section Header Controls */}
-                        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                        <div ref={mainHeaderRef} className="flex flex-wrap items-center justify-between gap-4 mb-6">
                             <div>
                                 <h2 className="text-xl font-black text-white tracking-tight">Active Tests & Quizzes</h2>
                                 <p className="text-xs text-slate-400 font-medium">Select an assessment to start your test</p>
