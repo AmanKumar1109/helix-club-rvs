@@ -7,7 +7,7 @@ function App() {
     <Routes>
       <Route path="/" element={<QuizzApp />} />
       <Route path="/quiz/:quizId" element={<QuizTakeScreen />} />
-      <Route path="/admin9234732699fdfdafda" element={<AdminApp />} />
+      <Route path="/adminpannel" element={<AdminApp />} />
     </Routes>
   );
 }
