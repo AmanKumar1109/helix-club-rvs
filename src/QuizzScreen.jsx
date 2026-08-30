@@ -1092,10 +1092,10 @@ const Quiz = ({ user, quiz, onComplete }) => {
                         </div>
 
                         <h3 className="text-xl sm:text-2xl font-black text-white mb-2">
-                            Quiz Submit Karein?
+                            Submit Quiz Now?
                         </h3>
                         <p className="text-xs sm:text-sm text-slate-300 mb-6 leading-relaxed">
-                            Aap quiz se peeche ja rahe hain. Kya aap abhi quiz submit karna chahte hain ya test continue karke pura karna chahte hain?
+                            You are attempting to leave the assessment. Would you like to submit your quiz now or continue taking the test?
                         </p>
 
                         {/* Progress Summary in Modal */}
@@ -1126,7 +1126,7 @@ const Quiz = ({ user, quiz, onComplete }) => {
                                 className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.99] text-white rounded-2xl font-bold text-sm shadow-lg shadow-emerald-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
                             >
                                 <CheckCircle className="w-4 h-4" />
-                                <span>Haan, Quiz Submit Karo ✓</span>
+                                <span>Yes, Submit Quiz ✓</span>
                             </button>
 
                             {/* Option 2: Cancel & Continue Quiz */}
@@ -1134,7 +1134,7 @@ const Quiz = ({ user, quiz, onComplete }) => {
                                 onClick={() => setShowExitModal(false)}
                                 className="w-full py-3.5 bg-slate-800 hover:bg-slate-700 active:scale-[0.99] text-slate-200 rounded-2xl font-bold text-sm border border-slate-700 transition-all cursor-pointer"
                             >
-                                Cancel (Test Pura Karo) ✕
+                                Cancel & Continue Test ✕
                             </button>
                         </div>
                     </div>
