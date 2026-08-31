@@ -2359,45 +2359,33 @@ const AdminDashboard = ({ adminUser, onLogout }) => {
         <div className="min-h-screen bg-[#0b0f17] flex flex-col justify-between text-slate-100 font-sans">
             <div>
                 <nav className="bg-[#0f172a]/95 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50 shadow-md">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
-                        <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-3">
+                    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3.5">
+                        <div className="flex justify-between items-center flex-nowrap gap-2">
+                            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                                 <img
                                     src={logoImg}
                                     alt="Helix Logo"
-                                    className="w-9 h-9 sm:w-10 sm:h-10 object-contain drop-shadow-[0_0_12px_rgba(65,105,226,0.35)] hover:scale-105 transition-transform duration-200"
+                                    className="w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-[0_0_12px_rgba(65,105,226,0.35)] shrink-0"
                                 />
-                                <div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-black text-lg text-white leading-tight">Helix Club Quiz</span>
-                                        <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 bg-blue-950/80 text-blue-400 font-bold rounded-full border border-blue-800/60">Admin Portal</span>
-                                        <span className="text-xs text-slate-400 hidden sm:inline">•</span>
-                                        <span className="hidden sm:flex items-center gap-1 text-xs text-slate-400 font-semibold">
-                                            powered by{' '}
-                                            <a
-                                                href="https://zectral.vercel.app/"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="font-bold text-[#4169e2] hover:text-[#587ef0] underline decoration-blue-500/50 underline-offset-2 hover:decoration-blue-400 transition-colors"
-                                            >
-                                                ZECTRAL
-                                            </a>
-                                        </span>
+                                <div className="min-w-0">
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="font-black text-sm sm:text-lg text-white leading-tight truncate">Helix Club Quiz</span>
+                                        <span className="text-[9px] sm:text-[10px] uppercase tracking-wider px-1.5 sm:px-2 py-0.5 bg-blue-950/80 text-blue-400 font-bold rounded-full border border-blue-800/60 shrink-0">Admin</span>
                                     </div>
-                                    <p className="text-xs text-slate-400">{adminUser.email}</p>
+                                    <p className="text-[10px] sm:text-xs text-slate-400 truncate">{adminUser.email}</p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 shrink-0">
                                 <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-emerald-950/80 border border-emerald-800 rounded-xl">
                                     <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
                                     <span className="text-xs font-semibold text-emerald-400">Live Feed</span>
                                 </div>
                                 <button
                                     onClick={onLogout}
-                                    className="flex items-center gap-2 px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors text-sm font-medium cursor-pointer border border-slate-700/60"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors text-xs font-medium cursor-pointer border border-slate-700/60 shrink-0"
                                 >
                                     <LogOut className="w-4 h-4" />
-                                    <span className="hidden md:inline">Logout</span>
+                                    <span className="hidden sm:inline">Logout</span>
                                 </button>
                             </div>
                         </div>
