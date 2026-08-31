@@ -1192,12 +1192,494 @@ const ActivityLogsTab = ({ logs }) => {
     );
 };
 
+// Quiz Analytics & Integrity Inspection Modal (Dark Theme with GSAP animations & CSS charts)
+const QuizAnalyticsModal = ({ quiz, submissions, activityLogs, onClose, onRefresh }) => {
+    const [modalTab, setModalTab] = useState('overview'); // 'overview' | 'leaderboard' | 'cheats' | 'questions'
+    const modalRef = useRef(null);
+
+    useEffect(() => {
+        if (modalRef.current) {
+            gsap.fromTo(modalRef.current,
+                { opacity: 0, scale: 0.95, y: 20 },
+                { opacity: 1, scale: 1, y: 0, duration: 0.3, ease: 'power2.out' }
+            );
+        }
+    }, []);
+
+    // Filter valid submissions for this specific quiz (exclude reset users)
+    const validQuizSubmissions = submissions.filter(sub => {
+        if (sub.quizId !== quiz.id) return false;
+        const isReset = (quiz.resetRollNumbers && quiz.resetRollNumbers.includes(sub.rollNumber)) ||
+                        (quiz.resetUserIds && quiz.resetUserIds.includes(sub.userId));
+        return !isReset;
+    });
+
+    // Leaderboard sorted by highest score first, then shortest time
+    const leaderboard = [...validQuizSubmissions].sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return (a.timeTaken || 0) - (b.timeTaken || 0);
+    });
+
+    // Statistical Computations
+    const totalAttempts = validQuizSubmissions.length;
+    const marksPerQ = quiz.marksPerQuestion || 4;
+    const totalPossibleMarks = (quiz.questions?.length || 0) * marksPerQ;
+
+    const scores = validQuizSubmissions.map(s => s.score);
+    const sumScore = scores.reduce((a, b) => a + b, 0);
+    const avgScore = totalAttempts > 0 ? (sumScore / totalAttempts).toFixed(1) : 0;
+    const avgPercent = totalPossibleMarks > 0 ? ((avgScore / totalPossibleMarks) * 100).toFixed(1) : 0;
+
+    const highestScore = totalAttempts > 0 ? Math.max(...scores) : 0;
+    const topStudent = leaderboard[0];
+
+    // Pass rate (>= 50%) and Distinction rate (>= 75%)
+    const passCount = validQuizSubmissions.filter(s => totalPossibleMarks > 0 && (s.score / totalPossibleMarks) >= 0.5).length;
+    const passRate = totalAttempts > 0 ? ((passCount / totalAttempts) * 100).toFixed(1) : 0;
+
+    const distinctionCount = validQuizSubmissions.filter(s => totalPossibleMarks > 0 && (s.score / totalPossibleMarks) >= 0.75).length;
+    const distinctionRate = totalAttempts > 0 ? ((distinctionCount / totalAttempts) * 100).toFixed(1) : 0;
+
+    // Average time taken
+    const totalTimeSecs = validQuizSubmissions.reduce((sum, s) => sum + (s.timeTaken || 0), 0);
+    const avgTimeSecs = totalAttempts > 0 ? Math.round(totalTimeSecs / totalAttempts) : 0;
+    const avgTimeMins = Math.floor(avgTimeSecs / 60);
+    const avgTimeRemSecs = avgTimeSecs % 60;
+
+    // Filter Anti-Cheat Logs specific to this quiz
+    const quizCheatLogs = (activityLogs || []).filter(log => {
+        return log.quizId === quiz.id || (log.quizName && log.quizName.toLowerCase() === quiz.name?.toLowerCase());
+    });
+
+    // Score Distribution Histogram Buckets (0-25%, 26-50%, 51-75%, 76-100%)
+    const buckets = [
+        { label: '0-25%', count: 0, color: 'bg-red-500', barColor: 'from-red-600 to-rose-500' },
+        { label: '26-50%', count: 0, color: 'bg-amber-500', barColor: 'from-amber-600 to-yellow-500' },
+        { label: '51-75%', count: 0, color: 'bg-blue-500', barColor: 'from-blue-600 to-cyan-500' },
+        { label: '76-100%', count: 0, color: 'bg-emerald-500', barColor: 'from-emerald-600 to-teal-500' }
+    ];
+
+    validQuizSubmissions.forEach(sub => {
+        const pct = totalPossibleMarks > 0 ? (sub.score / totalPossibleMarks) * 100 : 0;
+        if (pct <= 25) buckets[0].count++;
+        else if (pct <= 50) buckets[1].count++;
+        else if (pct <= 75) buckets[2].count++;
+        else buckets[3].count++;
+    });
+
+    const maxBucketCount = Math.max(...buckets.map(b => b.count), 1);
+    const isPublic = quiz.isLeaderboardPublic === true || quiz.leaderboardPublic === true;
+
+    // Reset handler for a specific student attempt inside the modal
+    const handleResetStudent = async (sub) => {
+        const confirmReset = window.confirm(
+            `Are you sure you want to reset the submission for ${sub.userName} (Roll: ${sub.rollNumber}) on "${quiz.name}"?\n\nThey will be allowed to re-take the quiz.`
+        );
+        if (!confirmReset) return;
+
+        try {
+            try {
+                if (sub.id) await deleteDoc(doc(db, 'submissions', sub.id));
+            } catch (e) {
+                console.warn('deleteDoc failed, using quiz reset array:', e);
+            }
+            await updateDoc(doc(db, 'quizzes', quiz.id), {
+                resetRollNumbers: arrayUnion(sub.rollNumber || ''),
+                resetUserIds: arrayUnion(sub.userId || '')
+            });
+            alert(`✅ Attempt reset! ${sub.userName} can now re-take the quiz.`);
+            if (onRefresh) onRefresh();
+        } catch (err) {
+            alert('Failed to reset attempt: ' + (err.message || err));
+        }
+    };
+
+    const handleTogglePublic = async () => {
+        try {
+            await updateDoc(doc(db, 'quizzes', quiz.id), {
+                isLeaderboardPublic: !isPublic
+            });
+            alert(`🏆 Leaderboard for "${quiz.name}" is now ${!isPublic ? 'PUBLIC to students' : 'PRIVATE'}`);
+            if (onRefresh) onRefresh();
+        } catch (err) {
+            alert('Failed to update visibility: ' + (err.message || err));
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-lg z-[100] flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+            <div
+                ref={modalRef}
+                className="bg-[#0f172a] border border-slate-700/80 rounded-3xl max-w-5xl w-full max-h-[92vh] flex flex-col shadow-[0_20px_70px_rgba(0,0,0,0.8)] overflow-hidden text-slate-100"
+            >
+                {/* Modal Header Bar */}
+                <div className="p-5 sm:p-6 border-b border-slate-800 flex items-start justify-between gap-4 bg-[#131b2e]/90 shrink-0">
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <span className="px-2.5 py-0.5 bg-blue-950 text-blue-400 border border-blue-800 rounded-full text-[10px] font-extrabold uppercase tracking-wider">
+                                Quiz Analytics & Integrity Report
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                                quiz.status === 'hidden' ? 'bg-amber-950 text-amber-300 border-amber-800' :
+                                quiz.status === 'completed' ? 'bg-purple-950 text-purple-300 border-purple-800' :
+                                'bg-emerald-950 text-emerald-300 border-emerald-800'
+                            }`}>
+                                {quiz.status === 'hidden' ? '👁️ Hidden' : quiz.status === 'completed' ? '🏁 Past' : '🟢 Live'}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={handleTogglePublic}
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold border cursor-pointer hover:scale-105 transition-transform ${
+                                    isPublic ? 'bg-emerald-950 text-emerald-300 border-emerald-800' : 'bg-slate-900 text-slate-400 border-slate-700'
+                                }`}
+                                title="Click to toggle public leaderboard visibility for students"
+                            >
+                                {isPublic ? '🏆 Leaderboard: Public (Click to hide)' : '🔒 Leaderboard: Private (Click to publish)'}
+                            </button>
+                        </div>
+                        <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-snug">
+                            {quiz.name}
+                        </h2>
+                        <p className="text-xs text-slate-400 flex items-center gap-3 flex-wrap">
+                            <span>⏱️ <strong>{quiz.duration} mins</strong></span>
+                            <span>🎯 <strong>+{marksPerQ} Marks/Q</strong></span>
+                            <span>❓ <strong>{quiz.questions?.length || 0} Questions</strong></span>
+                            <span>📊 <strong>{totalPossibleMarks} Max Pts</strong></span>
+                        </p>
+                    </div>
+
+                    <button
+                        onClick={onClose}
+                        className="w-9 h-9 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shrink-0"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+
+                {/* Sub-Navigation Tabs inside Modal */}
+                <div className="px-6 pt-3 bg-[#131b2e]/50 border-b border-slate-800 flex items-center gap-2 overflow-x-auto shrink-0">
+                    <button
+                        onClick={() => setModalTab('overview')}
+                        className={`px-4 py-2.5 rounded-t-xl text-xs font-bold transition-all flex items-center gap-1.5 border-b-2 cursor-pointer whitespace-nowrap ${
+                            modalTab === 'overview'
+                                ? 'border-[#4169e2] text-white bg-slate-800/80'
+                                : 'border-transparent text-slate-400 hover:text-slate-200'
+                        }`}
+                    >
+                        <BarChart3 className="w-4 h-4 text-blue-400" />
+                        Overview & Charts
+                    </button>
+                    <button
+                        onClick={() => setModalTab('leaderboard')}
+                        className={`px-4 py-2.5 rounded-t-xl text-xs font-bold transition-all flex items-center gap-1.5 border-b-2 cursor-pointer whitespace-nowrap ${
+                            modalTab === 'leaderboard'
+                                ? 'border-amber-500 text-white bg-slate-800/80'
+                                : 'border-transparent text-slate-400 hover:text-slate-200'
+                        }`}
+                    >
+                        <Trophy className="w-4 h-4 text-amber-400" />
+                        Leaderboard ({totalAttempts})
+                    </button>
+                    <button
+                        onClick={() => setModalTab('cheats')}
+                        className={`px-4 py-2.5 rounded-t-xl text-xs font-bold transition-all flex items-center gap-1.5 border-b-2 cursor-pointer whitespace-nowrap ${
+                            modalTab === 'cheats'
+                                ? 'border-red-500 text-white bg-slate-800/80'
+                                : 'border-transparent text-slate-400 hover:text-slate-200'
+                        }`}
+                    >
+                        <ShieldCheck className="w-4 h-4 text-red-400" />
+                        Anti-Cheat Logs ({quizCheatLogs.length})
+                    </button>
+                    <button
+                        onClick={() => setModalTab('questions')}
+                        className={`px-4 py-2.5 rounded-t-xl text-xs font-bold transition-all flex items-center gap-1.5 border-b-2 cursor-pointer whitespace-nowrap ${
+                            modalTab === 'questions'
+                                ? 'border-indigo-500 text-white bg-slate-800/80'
+                                : 'border-transparent text-slate-400 hover:text-slate-200'
+                        }`}
+                    >
+                        <FileText className="w-4 h-4 text-indigo-400" />
+                        Questions Preview ({quiz.questions?.length || 0})
+                    </button>
+                </div>
+
+                {/* Modal Body Content */}
+                <div className="p-6 overflow-y-auto space-y-6 flex-1 bg-[#0b0f17]/95">
+                    {modalTab === 'overview' && (
+                        <>
+                            {/* Key Stats 4-Grid */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="bg-[#131b2e]/90 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between shadow-sm">
+                                    <div className="flex items-center justify-between text-slate-400 mb-2">
+                                        <span className="text-xs font-semibold">Total Submissions</span>
+                                        <Users className="w-4 h-4 text-blue-400" />
+                                    </div>
+                                    <p className="text-2xl font-black text-white">{totalAttempts}</p>
+                                    <p className="text-[11px] text-slate-400 mt-1">Students completed</p>
+                                </div>
+
+                                <div className="bg-[#131b2e]/90 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between shadow-sm">
+                                    <div className="flex items-center justify-between text-slate-400 mb-2">
+                                        <span className="text-xs font-semibold">Average Score</span>
+                                        <Target className="w-4 h-4 text-emerald-400" />
+                                    </div>
+                                    <p className="text-2xl font-black text-emerald-400">{avgScore} <span className="text-xs font-normal text-slate-400">/ {totalPossibleMarks}</span></p>
+                                    <p className="text-[11px] text-slate-400 mt-1">{avgPercent}% Mean Accuracy</p>
+                                </div>
+
+                                <div className="bg-[#131b2e]/90 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between shadow-sm">
+                                    <div className="flex items-center justify-between text-slate-400 mb-2">
+                                        <span className="text-xs font-semibold">Top Score</span>
+                                        <Trophy className="w-4 h-4 text-amber-400" />
+                                    </div>
+                                    <p className="text-2xl font-black text-amber-400">{highestScore} <span className="text-xs font-normal text-slate-400">/ {totalPossibleMarks}</span></p>
+                                    <p className="text-[11px] text-slate-400 mt-1 truncate">{topStudent ? `🥇 ${topStudent.userName}` : 'No submissions'}</p>
+                                </div>
+
+                                <div className="bg-[#131b2e]/90 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between shadow-sm">
+                                    <div className="flex items-center justify-between text-slate-400 mb-2">
+                                        <span className="text-xs font-semibold">Cheat Violations</span>
+                                        <AlertCircle className="w-4 h-4 text-rose-400" />
+                                    </div>
+                                    <p className="text-2xl font-black text-rose-400">{quizCheatLogs.length}</p>
+                                    <p className="text-[11px] text-slate-400 mt-1">{quizCheatLogs.length > 0 ? 'Suspicious events logged' : 'Clean integrity'}</p>
+                                </div>
+                            </div>
+
+                            {/* Score Distribution Histogram & Performance Breakdown */}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                {/* Score Distribution Chart */}
+                                <div className="lg:col-span-2 bg-[#131b2e]/90 border border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                                            <BarChart3 className="w-4 h-4 text-blue-400" />
+                                            Score Distribution (Student Marks Breakdown)
+                                        </h3>
+                                        <span className="text-xs text-slate-400">4 Performance Bands</span>
+                                    </div>
+
+                                    {totalAttempts === 0 ? (
+                                        <div className="py-12 text-center text-slate-500 font-medium text-xs">
+                                            No submission data recorded yet to render chart.
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3 pt-2">
+                                            {buckets.map((bucket, i) => {
+                                                const pctOfTotal = totalAttempts > 0 ? Math.round((bucket.count / totalAttempts) * 100) : 0;
+                                                const barWidth = `${Math.max((bucket.count / maxBucketCount) * 100, 4)}%`;
+                                                return (
+                                                    <div key={i} className="space-y-1">
+                                                        <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
+                                                            <span className="flex items-center gap-2">
+                                                                <span className={`w-2.5 h-2.5 rounded-full ${bucket.color}`}></span>
+                                                                Band {bucket.label}
+                                                            </span>
+                                                            <span><strong>{bucket.count}</strong> students ({pctOfTotal}%)</span>
+                                                        </div>
+                                                        <div className="w-full h-3.5 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-slate-800">
+                                                            <div
+                                                                className={`h-full rounded-full bg-gradient-to-r ${bucket.barColor} transition-all duration-500`}
+                                                                style={{ width: barWidth }}
+                                                            ></div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Performance Insights */}
+                                <div className="bg-[#131b2e]/90 border border-slate-800 rounded-2xl p-5 space-y-4 flex flex-col justify-between">
+                                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                                        <TrendingUp className="w-4 h-4 text-emerald-400" />
+                                        Performance Insights
+                                    </h3>
+
+                                    <div className="space-y-3">
+                                        <div className="p-3 bg-slate-900/90 rounded-xl border border-slate-800 flex items-center justify-between">
+                                            <div>
+                                                <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Pass Rate (≥ 50%)</p>
+                                                <p className="text-lg font-black text-emerald-400">{passRate}%</p>
+                                            </div>
+                                            <span className="text-xs font-mono text-slate-400 bg-slate-800 px-2 py-1 rounded-md">{passCount}/{totalAttempts}</span>
+                                        </div>
+
+                                        <div className="p-3 bg-slate-900/90 rounded-xl border border-slate-800 flex items-center justify-between">
+                                            <div>
+                                                <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Distinction (≥ 75%)</p>
+                                                <p className="text-lg font-black text-purple-400">{distinctionRate}%</p>
+                                            </div>
+                                            <span className="text-xs font-mono text-slate-400 bg-slate-800 px-2 py-1 rounded-md">{distinctionCount}/{totalAttempts}</span>
+                                        </div>
+
+                                        <div className="p-3 bg-slate-900/90 rounded-xl border border-slate-800 flex items-center justify-between">
+                                            <div>
+                                                <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Avg Time Spent</p>
+                                                <p className="text-base font-bold text-white">{avgTimeMins}m {avgTimeRemSecs}s</p>
+                                            </div>
+                                            <span className="text-[11px] font-mono text-amber-400 bg-amber-950/60 px-2 py-1 rounded-md border border-amber-800/60">/ {quiz.duration}m max</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </>
+                    )}
+
+                    {modalTab === 'leaderboard' && (
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                                    <Trophy className="w-4 h-4 text-amber-400" />
+                                    Quiz Rankings & Attempts ({leaderboard.length})
+                                </h3>
+                            </div>
+
+                            {leaderboard.length === 0 ? (
+                                <div className="p-12 text-center text-slate-500 bg-[#131b2e]/90 rounded-2xl border border-slate-800">
+                                    No submissions recorded for this quiz yet.
+                                </div>
+                            ) : (
+                                <div className="bg-[#131b2e]/90 border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left text-xs text-slate-300">
+                                            <thead className="bg-slate-900/90 text-slate-400 uppercase font-mono text-[10px] tracking-wider border-b border-slate-800">
+                                                <tr>
+                                                    <th className="py-3 px-4">Rank</th>
+                                                    <th className="py-3 px-4">Student Name</th>
+                                                    <th className="py-3 px-4">Roll Number</th>
+                                                    <th className="py-3 px-4">Score</th>
+                                                    <th className="py-3 px-4">Accuracy</th>
+                                                    <th className="py-3 px-4">Time Taken</th>
+                                                    <th className="py-3 px-4 text-right">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-800/60 font-medium">
+                                                {leaderboard.map((sub, idx) => {
+                                                    const pct = totalPossibleMarks > 0 ? Math.round((sub.score / totalPossibleMarks) * 100) : 0;
+                                                    const m = Math.floor((sub.timeTaken || 0) / 60);
+                                                    const s = (sub.timeTaken || 0) % 60;
+                                                    return (
+                                                        <tr key={sub.id || idx} className="hover:bg-slate-800/50 transition-colors">
+                                                            <td className="py-3.5 px-4 font-black">
+                                                                {idx === 0 ? '🥇 1st' : idx === 1 ? '🥈 2nd' : idx === 2 ? '🥉 3rd' : `#${idx + 1}`}
+                                                            </td>
+                                                            <td className="py-3.5 px-4 font-bold text-white">{sub.userName}</td>
+                                                            <td className="py-3.5 px-4 font-mono text-slate-400">{sub.rollNumber}</td>
+                                                            <td className="py-3.5 px-4 font-black text-emerald-400">{sub.score} / {totalPossibleMarks}</td>
+                                                            <td className="py-3.5 px-4 font-bold text-blue-400">{pct}%</td>
+                                                            <td className="py-3.5 px-4 font-mono text-slate-400">{m}m {s}s</td>
+                                                            <td className="py-3.5 px-4 text-right">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleResetStudent(sub)}
+                                                                    className="px-3 py-1.5 bg-red-950/80 hover:bg-red-900 border border-red-800/80 text-red-300 hover:text-white rounded-lg text-xs font-bold transition-all cursor-pointer"
+                                                                >
+                                                                    Reset & Reattempt
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {modalTab === 'cheats' && (
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                                    <ShieldCheck className="w-4 h-4 text-red-400" />
+                                    Anti-Cheat Violation Logs ({quizCheatLogs.length})
+                                </h3>
+                            </div>
+
+                            {quizCheatLogs.length === 0 ? (
+                                <div className="p-12 text-center bg-[#131b2e]/90 rounded-2xl border border-slate-800 text-emerald-400 font-bold text-sm">
+                                    🛡️ Clean Audit: No suspicious activity logged for this quiz.
+                                </div>
+                            ) : (
+                                <div className="space-y-2.5">
+                                    {quizCheatLogs.map((log) => {
+                                        const logDate = log.timestamp?.toDate ? log.timestamp.toDate().toLocaleString() : 'Just now';
+                                        return (
+                                            <div key={log.id} className="p-4 bg-[#131b2e]/90 border border-red-900/40 rounded-xl flex items-start justify-between gap-4">
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="px-2.5 py-0.5 bg-red-950 text-red-400 border border-red-800/80 rounded-md text-[10px] font-bold">
+                                                            ⚠️ {log.action || log.activity || 'Suspicious Action'}
+                                                        </span>
+                                                        <span className="text-xs font-bold text-white">{log.userName || log.userEmail}</span>
+                                                        {log.rollNumber && <span className="text-xs font-mono text-slate-400">({log.rollNumber})</span>}
+                                                    </div>
+                                                    <p className="text-xs text-slate-300 font-mono">{log.details || log.message || log.action}</p>
+                                                </div>
+                                                <span className="text-[11px] text-slate-500 font-mono shrink-0">{logDate}</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {modalTab === 'questions' && (
+                        <div className="space-y-4">
+                            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                                <FileText className="w-4 h-4 text-indigo-400" />
+                                Quiz Question Paper ({quiz.questions?.length || 0} Questions)
+                            </h3>
+                            <div className="space-y-3">
+                                {quiz.questions?.map((q, idx) => (
+                                    <div key={idx} className="p-4 bg-[#131b2e]/90 border border-slate-800 rounded-xl space-y-3">
+                                        <p className="text-xs font-bold text-white flex items-center gap-2">
+                                            <span className="px-2 py-0.5 bg-slate-800 text-blue-400 rounded-md font-mono">Q{idx + 1}</span>
+                                            {q.question}
+                                        </p>
+                                        {q.codeSnippet && (
+                                            <pre className="p-3 bg-slate-950 rounded-lg text-xs font-mono text-emerald-400 overflow-x-auto border border-slate-800">
+                                                <code>{q.codeSnippet}</code>
+                                            </pre>
+                                        )}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                            {q.options?.map((opt, oIdx) => (
+                                                <div
+                                                    key={oIdx}
+                                                    className={`p-2.5 rounded-lg border flex items-center gap-2 ${
+                                                        oIdx === q.correctAnswer
+                                                            ? 'bg-emerald-950/80 border-emerald-700 text-emerald-300 font-bold'
+                                                            : 'bg-slate-900/80 border-slate-800 text-slate-400'
+                                                    }`}
+                                                >
+                                                    <span className="font-bold">{String.fromCharCode(65 + oIdx)}.</span>
+                                                    <span>{opt}</span>
+                                                    {oIdx === q.correctAnswer && <span className="ml-auto text-[10px] bg-emerald-900 text-emerald-300 px-1.5 py-0.5 rounded">Correct</span>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // Manage Quizzes Component (Live Quizzes, Past Quizzes & Edit Quiz Options)
-const ManageQuizzesTab = ({ quizzes, submissions, onRefresh, adminUser }) => {
+const ManageQuizzesTab = ({ quizzes, submissions, activityLogs, onRefresh, adminUser }) => {
     const [filterStatus, setFilterStatus] = useState('all'); // 'all' | 'live' | 'past'
     const [searchQuery, setSearchQuery] = useState('');
     const [expandedQuizId, setExpandedQuizId] = useState(null);
     const [editingQuiz, setEditingQuiz] = useState(null);
+    const [analyticsQuiz, setAnalyticsQuiz] = useState(null);
     const [deleteConfirmId, setDeleteConfirmId] = useState(null);
     const [saving, setSaving] = useState(false);
 
@@ -1609,6 +2091,16 @@ const ManageQuizzesTab = ({ quizzes, submissions, onRefresh, adminUser }) => {
 
                                     {/* Action Buttons Toolbar */}
                                     <div className="flex items-center gap-2 flex-wrap shrink-0">
+                                        {/* ANALYTICS & STATS BUTTON */}
+                                        <button
+                                            type="button"
+                                            onClick={() => setAnalyticsQuiz(quiz)}
+                                            className="px-3 py-2 bg-purple-900/80 hover:bg-purple-800 border border-purple-700/80 text-purple-200 hover:text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-purple-900/30 cursor-pointer flex items-center gap-1.5"
+                                            title="View Leaderboard, Average Score, Charts, and Anti-Cheat Logs for this quiz"
+                                        >
+                                            <BarChart3 className="w-4 h-4 text-purple-300" />
+                                            Analytics & Stats
+                                        </button>
                                         {/* Leaderboard Public / Private Toggle Button */}
                                         <button
                                             type="button"
@@ -2042,14 +2534,26 @@ const ManageQuizzesTab = ({ quizzes, submissions, onRefresh, adminUser }) => {
                     </div>
                 </div>
             )}
+
+            {/* QUIZ ANALYTICS & INTEGRITY MODAL */}
+            {analyticsQuiz && (
+                <QuizAnalyticsModal
+                    quiz={analyticsQuiz}
+                    submissions={submissions}
+                    activityLogs={activityLogs}
+                    onClose={() => setAnalyticsQuiz(null)}
+                    onRefresh={onRefresh}
+                />
+            )}
         </div>
     );
 };
 
 // Results & Leaderboard Tab (Dark Theme)
 // Results & Leaderboard Tab (Dark Theme)
-const ResultsTab = ({ submissions, quizzes, onRefresh }) => {
+const ResultsTab = ({ submissions, quizzes, activityLogs, onRefresh }) => {
     const [selectedQuiz, setSelectedQuiz] = useState('all');
+    const [analyticsQuiz, setAnalyticsQuiz] = useState(null);
 
     const handleDeleteSubmission = async (sub) => {
         const confirmDelete = window.confirm(
@@ -2158,28 +2662,39 @@ const ResultsTab = ({ submissions, quizzes, onRefresh }) => {
                         if (!currentQuizObj) return null;
                         const isPublic = currentQuizObj.isLeaderboardPublic === true || currentQuizObj.leaderboardPublic === true;
                         return (
-                            <button
-                                type="button"
-                                onClick={async () => {
-                                    try {
-                                        await updateDoc(doc(db, 'quizzes', selectedQuiz), {
-                                            isLeaderboardPublic: !isPublic
-                                        });
-                                        alert(`🏆 Leaderboard for "${currentQuizObj.name}" is now ${!isPublic ? 'PUBLIC (Students can view rankings)' : 'PRIVATE (Hidden from students)'}!`);
-                                        if (onRefresh) onRefresh();
-                                    } catch (e) {
-                                        alert("Failed to update visibility: " + (e.message || e));
-                                    }
-                                }}
-                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 border shrink-0 ${
-                                    isPublic
-                                        ? 'bg-emerald-950/90 border-emerald-700 text-emerald-300 shadow-md'
-                                        : 'bg-slate-900 border-slate-700 text-slate-300 hover:text-white'
-                                }`}
-                            >
-                                <Trophy className={`w-4 h-4 ${isPublic ? 'text-amber-400' : 'text-slate-500'}`} />
-                                <span>{isPublic ? '🌐 Leaderboard: Public to Students' : '🔒 Leaderboard: Private (Click to publish)'}</span>
-                            </button>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <button
+                                    type="button"
+                                    onClick={() => setAnalyticsQuiz(currentQuizObj)}
+                                    className="px-3.5 py-2 bg-purple-900/90 hover:bg-purple-800 border border-purple-700/80 text-purple-200 hover:text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-purple-900/30 cursor-pointer flex items-center gap-1.5 shrink-0"
+                                >
+                                    <BarChart3 className="w-4 h-4 text-purple-300" />
+                                    <span>Detailed Analytics & Charts</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        try {
+                                            await updateDoc(doc(db, 'quizzes', selectedQuiz), {
+                                                isLeaderboardPublic: !isPublic
+                                            });
+                                            alert(`🏆 Leaderboard for "${currentQuizObj.name}" is now ${!isPublic ? 'PUBLIC (Students can view rankings)' : 'PRIVATE (Hidden from students)'}!`);
+                                            if (onRefresh) onRefresh();
+                                        } catch (e) {
+                                            alert("Failed to update visibility: " + (e.message || e));
+                                        }
+                                    }}
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 border shrink-0 ${
+                                        isPublic
+                                            ? 'bg-emerald-950/90 border-emerald-700 text-emerald-300 shadow-md'
+                                            : 'bg-slate-900 border-slate-700 text-slate-300 hover:text-white'
+                                    }`}
+                                >
+                                    <Trophy className={`w-4 h-4 ${isPublic ? 'text-amber-400' : 'text-slate-500'}`} />
+                                    <span>{isPublic ? '🌐 Leaderboard: Public to Students' : '🔒 Leaderboard: Private (Click to publish)'}</span>
+                                </button>
+                            </div>
                         );
                     })()}
                 </div>
@@ -2359,6 +2874,17 @@ const ResultsTab = ({ submissions, quizzes, onRefresh }) => {
                     </table>
                 </div>
             </div>
+
+            {/* QUIZ ANALYTICS MODAL */}
+            {analyticsQuiz && (
+                <QuizAnalyticsModal
+                    quiz={analyticsQuiz}
+                    submissions={submissions}
+                    activityLogs={activityLogs}
+                    onClose={() => setAnalyticsQuiz(null)}
+                    onRefresh={onRefresh}
+                />
+            )}
         </div>
     );
 };
@@ -2542,10 +3068,10 @@ const AdminDashboard = ({ adminUser, onLogout }) => {
                             <CreateQuizTab onQuizCreated={loadData} adminUser={adminUser} />
                         )}
                         {activeTab === 'manage' && (
-                            <ManageQuizzesTab quizzes={quizzes} submissions={submissions} onRefresh={loadData} adminUser={adminUser} />
+                            <ManageQuizzesTab quizzes={quizzes} submissions={submissions} activityLogs={activityLogs} onRefresh={loadData} adminUser={adminUser} />
                         )}
                         {activeTab === 'results' && (
-                            <ResultsTab submissions={submissions} quizzes={quizzes} onRefresh={loadData} />
+                            <ResultsTab submissions={submissions} quizzes={quizzes} activityLogs={activityLogs} onRefresh={loadData} />
                         )}
                         {activeTab === 'logs' && (
                             <ActivityLogsTab logs={activityLogs} />

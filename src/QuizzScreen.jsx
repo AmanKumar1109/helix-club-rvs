@@ -1835,6 +1835,8 @@ export const QuizTakeScreen = () => {
             try {
                 setLoading(true);
                 const quizDoc = await getDoc(doc(db, 'quizzes', quizId));
+                let isReset = false;
+
                 if (quizDoc.exists()) {
                     const qData = quizDoc.data();
                     if (qData.status === 'hidden' || qData.status === 'archived') {
@@ -1842,11 +1844,19 @@ export const QuizTakeScreen = () => {
                     } else {
                         setQuiz({ id: quizDoc.id, ...qData });
                     }
+
+                    // Check if current student's attempt was reset by admin
+                    if (auth.currentUser && qData.resetUserIds && qData.resetUserIds.includes(auth.currentUser.uid)) {
+                        isReset = true;
+                    }
+                    if (userDetails?.rollNumber && qData.resetRollNumbers && qData.resetRollNumbers.includes(userDetails.rollNumber)) {
+                        isReset = true;
+                    }
                 } else {
                     setError('Quiz not found or it may have been removed.');
                 }
 
-                if (auth.currentUser) {
+                if (auth.currentUser && !isReset) {
                     const subQuery = query(
                         collection(db, 'submissions'),
                         where('userId', '==', auth.currentUser.uid),
@@ -1855,7 +1865,11 @@ export const QuizTakeScreen = () => {
                     const subSnap = await getDocs(subQuery);
                     if (!subSnap.empty) {
                         setAlreadySubmitted(subSnap.docs[0].data());
+                    } else {
+                        setAlreadySubmitted(null);
                     }
+                } else {
+                    setAlreadySubmitted(null);
                 }
             } catch (err) {
                 console.error('Error loading quiz:', err);
