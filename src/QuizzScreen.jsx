@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import gsap from 'gsap';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
-import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, query, where, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, updateDoc, arrayRemove, query, where, serverTimestamp } from 'firebase/firestore';
 import { Clock, LogOut, ChevronRight, Trophy, User, Hash, BookOpen, Award, Timer, CheckCircle, XCircle, Sparkles, ShieldCheck, AlertCircle } from 'lucide-react';
 import logoImg from './assets/logo.png';
 
@@ -606,8 +606,17 @@ const QuizList = ({ user, onLogout }) => {
         }
     };
 
+    const checkQuizSubmitted = (quizId) => {
+        const targetQuiz = quizzes.find(q => q.id === quizId);
+        if (!targetQuiz) return !!submissions[quizId];
+        const isReset = (targetQuiz.resetRollNumbers && targetQuiz.resetRollNumbers.includes(user?.rollNumber)) ||
+                        (targetQuiz.resetUserIds && targetQuiz.resetUserIds.includes(user?.uid));
+        if (isReset) return false;
+        return !!submissions[quizId];
+    };
+
     const handleStartQuiz = (quiz) => {
-        if (submissions[quiz.id]) {
+        if (checkQuizSubmitted(quiz.id)) {
             alert('You have already submitted this quiz!');
             return;
         }
@@ -648,7 +657,7 @@ const QuizList = ({ user, onLogout }) => {
     const filteredQuizzes = visibleQuizzes
         .filter(quiz => {
             const matchesSearch = quiz.name?.toLowerCase().includes(searchQuery.toLowerCase());
-            const isSubmitted = !!submissions[quiz.id];
+            const isSubmitted = checkQuizSubmitted(quiz.id);
             if (statusFilter === 'available') return matchesSearch && !isSubmitted;
             if (statusFilter === 'completed') return matchesSearch && isSubmitted;
             return matchesSearch;
@@ -665,7 +674,7 @@ const QuizList = ({ user, onLogout }) => {
             return 0; // default latest order
         });
 
-    const completedCount = Object.keys(submissions).filter(qId => visibleQuizzes.some(q => q.id === qId)).length;
+    const completedCount = visibleQuizzes.filter(q => checkQuizSubmitted(q.id)).length;
     const availableCount = Math.max(0, visibleQuizzes.length - completedCount);
 
     return (
@@ -990,10 +999,14 @@ const QuizList = ({ user, onLogout }) => {
                             </div>
                         </div>
 
-                        {/* Per-Quiz Leaderboard Panel */}
+                        {/* Per-Quiz Leaderboard Panel (Only visible if Admin has made the leaderboard public) */}
                         {quizzes.map(quiz => {
                             const isSubmitted = !!submissions[quiz.id];
-                            if (!isSubmitted) return null;
+                            const isLeaderboardPublic = quiz.isLeaderboardPublic === true || quiz.leaderboardPublic === true;
+
+                            // Students can ONLY view the leaderboard if the quiz is submitted AND admin made it public!
+                            if (!isSubmitted || !isLeaderboardPublic) return null;
+
                             const mySubmission = submissions[quiz.id];
                             const formatSecs = (s) => {
                                 if (s == null) return '—';
@@ -1058,7 +1071,7 @@ const QuizList = ({ user, onLogout }) => {
                         ) : (
                             <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                                 {filteredQuizzes.map((quiz, index) => {
-                                    const isSubmitted = !!submissions[quiz.id];
+                                    const isSubmitted = checkQuizSubmitted(quiz.id);
                                     const marksPerQ = quiz.marksPerQuestion ?? 4;
                                     const totalMarks = (quiz.questions?.length || 0) * marksPerQ;
                                     const theme = cardThemes[index % cardThemes.length];
@@ -1266,6 +1279,17 @@ const Quiz = ({ user, quiz, onComplete }) => {
         const totalMarks = quiz.questions.length * marksPerQuestion;
 
         try {
+            // Remove reset flags for this student if re-taking after reset
+            try {
+                const quizRef = doc(db, 'quizzes', quiz.id);
+                await updateDoc(quizRef, {
+                    resetRollNumbers: arrayRemove(user?.rollNumber || ''),
+                    resetUserIds: arrayRemove(user?.uid || '')
+                });
+            } catch (cleanErr) {
+                console.warn('Could not clean reset flags:', cleanErr);
+            }
+
             await addDoc(collection(db, 'submissions'), {
                 userId: user.uid,
                 userName: user.fullName,

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
-import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, setDoc, deleteDoc, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, setDoc, deleteDoc, query, where, orderBy, serverTimestamp, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { Clock, LogOut, AlertCircle, Trophy, User, Hash, Award, Timer, TrendingUp, Users, Activity, Plus, Eye, EyeOff, Lock, BarChart3, Target, Edit2, Save, X, Filter, ShieldCheck, Search, Mail, FileText, Code, Copy, Check, Sparkles, HelpCircle, BookOpen, Trash2, PlayCircle, CheckCircle2, Edit3, Layers, RefreshCw, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
 import logoImg from './assets/logo.png';
 
@@ -1325,6 +1325,21 @@ const ManageQuizzesTab = ({ quizzes, submissions, onRefresh, adminUser }) => {
         }
     };
 
+    const handleToggleLeaderboardPublic = async (quiz) => {
+        const currentIsPublic = quiz.isLeaderboardPublic === true || quiz.leaderboardPublic === true;
+        const newStatus = !currentIsPublic;
+        try {
+            await updateDoc(doc(db, 'quizzes', quiz.id), {
+                isLeaderboardPublic: newStatus
+            });
+            alert(`🏆 Leaderboard for "${quiz.name}" is now ${newStatus ? 'PUBLIC (Visible to students)' : 'PRIVATE (Hidden from students)'}!`);
+            onRefresh();
+        } catch (err) {
+            console.error("Error toggling leaderboard visibility:", err);
+            alert("Failed to update leaderboard visibility: " + (err.message || err));
+        }
+    };
+
     const addQuestionToEdit = () => {
         if (!currentQuestion.trim() || options.some(o => !o.trim())) {
             alert('Please fill question text and all options');
@@ -1552,6 +1567,16 @@ const ManageQuizzesTab = ({ quizzes, submissions, onRefresh, adminUser }) => {
                                                     </>
                                                 )}
                                             </span>
+
+                                            {(quiz.isLeaderboardPublic || quiz.leaderboardPublic) ? (
+                                                <span className="px-2.5 py-0.5 bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 rounded-full text-xs font-bold flex items-center gap-1">
+                                                    <Trophy className="w-3 h-3 text-amber-400" /> Leaderboard: Public
+                                                </span>
+                                            ) : (
+                                                <span className="px-2.5 py-0.5 bg-slate-900/90 text-slate-400 border border-slate-700/80 rounded-full text-xs font-bold flex items-center gap-1">
+                                                    <Lock className="w-3 h-3 text-slate-500" /> Leaderboard: Private
+                                                </span>
+                                            )}
                                         </div>
 
                                         {/* Badges Bar */}
@@ -1584,6 +1609,21 @@ const ManageQuizzesTab = ({ quizzes, submissions, onRefresh, adminUser }) => {
 
                                     {/* Action Buttons Toolbar */}
                                     <div className="flex items-center gap-2 flex-wrap shrink-0">
+                                        {/* Leaderboard Public / Private Toggle Button */}
+                                        <button
+                                            type="button"
+                                            onClick={() => handleToggleLeaderboardPublic(quiz)}
+                                            className={`px-3 py-2 bg-slate-900 hover:bg-slate-800 border rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                                                (quiz.isLeaderboardPublic || quiz.leaderboardPublic)
+                                                    ? 'border-emerald-700 text-emerald-300'
+                                                    : 'border-slate-700 text-slate-400 hover:text-white'
+                                            }`}
+                                            title={(quiz.isLeaderboardPublic || quiz.leaderboardPublic) ? "Leaderboard is currently PUBLIC to students. Click to make private." : "Leaderboard is currently PRIVATE. Click to make public for students."}
+                                        >
+                                            <Trophy className={`w-4 h-4 ${(quiz.isLeaderboardPublic || quiz.leaderboardPublic) ? 'text-amber-400' : 'text-slate-500'}`} />
+                                            {(quiz.isLeaderboardPublic || quiz.leaderboardPublic) ? 'Leaderboard: Public' : 'Leaderboard: Private'}
+                                        </button>
+
                                         {/* Hide / Unhide Button */}
                                         <button
                                             type="button"
@@ -2013,23 +2053,48 @@ const ResultsTab = ({ submissions, quizzes, onRefresh }) => {
 
     const handleDeleteSubmission = async (sub) => {
         const confirmDelete = window.confirm(
-            `Are you sure you want to delete the submission for ${sub.userName} (Roll: ${sub.rollNumber}) on quiz "${sub.quizName || 'this quiz'}"?\n\nThis will reset their score and allow the student to re-take the quiz.`
+            `Are you sure you want to reset the submission for ${sub.userName} (Roll: ${sub.rollNumber}) on quiz "${sub.quizName || 'this quiz'}"?\n\nThis will reset their score and allow the student to re-take the quiz.`
         );
         if (!confirmDelete) return;
 
         try {
-            await deleteDoc(doc(db, 'submissions', sub.id));
-            alert(`✅ Entry deleted! ${sub.userName} can now re-attempt the quiz.`);
+            // 1. Attempt direct deleteDoc if allowed by rules
+            try {
+                if (sub.id) {
+                    await deleteDoc(doc(db, 'submissions', sub.id));
+                }
+            } catch (delErr) {
+                console.warn("Direct deleteDoc on submissions failed, using quiz document reset:", delErr);
+            }
+
+            // 2. Add student roll number and userId to reset list on quiz document (quizzes writes are 100% allowed by Firestore rules)
+            if (sub.quizId) {
+                const quizRef = doc(db, 'quizzes', sub.quizId);
+                await updateDoc(quizRef, {
+                    resetRollNumbers: arrayUnion(sub.rollNumber || ''),
+                    resetUserIds: arrayUnion(sub.userId || '')
+                });
+            }
+
+            alert(`✅ Attempt reset successfully! ${sub.userName} (Roll: ${sub.rollNumber}) can now re-attempt the quiz.`);
             if (onRefresh) onRefresh();
         } catch (err) {
-            console.error("Error deleting submission:", err);
-            alert("Failed to delete submission entry.");
+            console.error("Error resetting submission:", err);
+            alert("Failed to reset submission entry: " + (err.message || err));
         }
     };
 
-    const filteredSubmissions = selectedQuiz === 'all'
+    const rawFilteredSubmissions = selectedQuiz === 'all'
         ? submissions
         : submissions.filter(sub => sub.quizId === selectedQuiz);
+
+    const filteredSubmissions = rawFilteredSubmissions.filter(sub => {
+        const targetQuiz = quizzes.find(q => q.id === sub.quizId);
+        if (!targetQuiz) return true;
+        const isReset = (targetQuiz.resetRollNumbers && targetQuiz.resetRollNumbers.includes(sub.rollNumber)) ||
+                        (targetQuiz.resetUserIds && targetQuiz.resetUserIds.includes(sub.userId));
+        return !isReset;
+    });
 
     const getLeaderboard = () => {
         const leaderboard = {};
@@ -2079,14 +2144,44 @@ const ResultsTab = ({ submissions, quizzes, onRefresh }) => {
                     </div>
                 </div>
 
-                {/* Selected Quiz Info Banner */}
-                <div className="mb-6 p-4 bg-blue-950/40 border border-blue-900/60 rounded-xl flex items-center justify-between">
+                {/* Selected Quiz Info & Leaderboard Public Toggle Banner */}
+                <div className="mb-6 p-4 bg-blue-950/40 border border-blue-900/60 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
-                        <Eye className="w-5 h-5 text-blue-400" />
+                        <Eye className="w-5 h-5 text-blue-400 shrink-0" />
                         <span className="font-semibold text-slate-200">
                             Viewing Results for: <span className="text-blue-400 font-bold">{selectedQuizName}</span>
                         </span>
                     </div>
+
+                    {selectedQuiz !== 'all' && (() => {
+                        const currentQuizObj = quizzes.find(q => q.id === selectedQuiz);
+                        if (!currentQuizObj) return null;
+                        const isPublic = currentQuizObj.isLeaderboardPublic === true || currentQuizObj.leaderboardPublic === true;
+                        return (
+                            <button
+                                type="button"
+                                onClick={async () => {
+                                    try {
+                                        await updateDoc(doc(db, 'quizzes', selectedQuiz), {
+                                            isLeaderboardPublic: !isPublic
+                                        });
+                                        alert(`🏆 Leaderboard for "${currentQuizObj.name}" is now ${!isPublic ? 'PUBLIC (Students can view rankings)' : 'PRIVATE (Hidden from students)'}!`);
+                                        if (onRefresh) onRefresh();
+                                    } catch (e) {
+                                        alert("Failed to update visibility: " + (e.message || e));
+                                    }
+                                }}
+                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 border shrink-0 ${
+                                    isPublic
+                                        ? 'bg-emerald-950/90 border-emerald-700 text-emerald-300 shadow-md'
+                                        : 'bg-slate-900 border-slate-700 text-slate-300 hover:text-white'
+                                }`}
+                            >
+                                <Trophy className={`w-4 h-4 ${isPublic ? 'text-amber-400' : 'text-slate-500'}`} />
+                                <span>{isPublic ? '🌐 Leaderboard: Public to Students' : '🔒 Leaderboard: Private (Click to publish)'}</span>
+                            </button>
+                        );
+                    })()}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
