@@ -2348,98 +2348,101 @@ const ManageQuizzesTab = ({ quizzes, submissions, activityLogs, onRefresh, admin
                         return (
                             <div
                                 key={quiz.id}
-                                className="bg-[#131b2e]/90 rounded-2xl border border-slate-800 hover:border-slate-700 transition-all p-5 shadow-[0_4px_20px_rgba(0,0,0,0.3)]"
+                                className="bg-[#131b2e]/90 rounded-2xl border border-slate-800 hover:border-slate-700 transition-all p-5 shadow-[0_4px_20px_rgba(0,0,0,0.3)] space-y-4"
                             >
-                                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                                    {/* Quiz Header Information */}
-                                    <div className="space-y-2 flex-1">
-                                        <div className="flex items-center gap-2.5 flex-wrap">
-                                            <h3 className="text-lg font-bold text-white tracking-tight">
-                                                {quiz.name}
-                                            </h3>
-                                            <span
-                                                className={`px-2.5 py-0.5 rounded-full text-xs font-bold flex items-center gap-1 border ${
-                                                    isHidden
-                                                        ? 'bg-amber-950/80 text-amber-300 border-amber-800/80'
-                                                        : isCompleted
-                                                        ? 'bg-purple-950/80 text-purple-300 border-purple-800/80'
-                                                        : 'bg-emerald-950/80 text-emerald-300 border-emerald-800/80'
-                                                }`}
-                                            >
-                                                {isHidden ? (
-                                                    <>👁️‍🗨️ Hidden from Students</>
-                                                ) : isCompleted ? (
-                                                    <>🏁 Past / Completed</>
-                                                ) : (
-                                                    <>
-                                                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                                                        Live / Active
-                                                    </>
-                                                )}
-                                            </span>
+                                {/* 1. Top Header: Quiz Title & Status Badges */}
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+                                    <h3 className="text-base sm:text-lg font-black text-white tracking-tight leading-snug">
+                                        {quiz.name}
+                                    </h3>
 
-                                            {(quiz.isLeaderboardPublic || quiz.leaderboardPublic) ? (
-                                                <span className="px-2.5 py-0.5 bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 rounded-full text-xs font-bold flex items-center gap-1">
-                                                    <Trophy className="w-3 h-3 text-amber-400" /> Leaderboard: Public
-                                                </span>
+                                    <div className="flex items-center gap-2 flex-wrap shrink-0">
+                                        <span
+                                            className={`px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 border ${
+                                                isHidden
+                                                    ? 'bg-amber-950/80 text-amber-300 border-amber-800/80'
+                                                    : isCompleted
+                                                    ? 'bg-purple-950/80 text-purple-300 border-purple-800/80'
+                                                    : 'bg-emerald-950/80 text-emerald-300 border-emerald-800/80'
+                                            }`}
+                                        >
+                                            {isHidden ? (
+                                                <>👁️‍🗨️ Hidden from Students</>
+                                            ) : isCompleted ? (
+                                                <>🏁 Past / Completed</>
                                             ) : (
-                                                <span className="px-2.5 py-0.5 bg-slate-900/90 text-slate-400 border border-slate-700/80 rounded-full text-xs font-bold flex items-center gap-1">
-                                                    <Lock className="w-3 h-3 text-slate-500" /> Leaderboard: Private
-                                                </span>
+                                                <>
+                                                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                                    Live / Active
+                                                </>
                                             )}
+                                        </span>
 
-                                            {(quiz.isAnswerKeyPublic || quiz.answerKeyPublic) ? (
-                                                <span className="px-2.5 py-0.5 bg-purple-950/80 text-purple-300 border border-purple-800/80 rounded-full text-xs font-bold flex items-center gap-1">
-                                                    <FileText className="w-3 h-3 text-purple-300" /> Answer Key: Released
-                                                </span>
-                                            ) : (
-                                                <span className="px-2.5 py-0.5 bg-slate-900/90 text-slate-400 border border-slate-700/80 rounded-full text-xs font-bold flex items-center gap-1">
-                                                    <Lock className="w-3 h-3 text-slate-500" /> Answer Key: Hidden
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        {/* Badges Bar */}
-                                        <div className="flex flex-wrap items-center gap-2 text-xs">
-                                            <span className="px-2.5 py-1 bg-slate-900 border border-slate-800 rounded-lg text-slate-300 font-semibold flex items-center gap-1">
-                                                <Timer className="w-3.5 h-3.5 text-amber-400" />
-                                                Duration: <strong className="text-white">{quiz.duration} mins</strong>
+                                        {(quiz.isLeaderboardPublic || quiz.leaderboardPublic) ? (
+                                            <span className="px-2.5 py-1 bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 rounded-full text-xs font-bold flex items-center gap-1">
+                                                <Trophy className="w-3 h-3 text-amber-400" /> Leaderboard: Public
                                             </span>
-
-                                            <span className="px-2.5 py-1 bg-slate-900 border border-slate-800 rounded-lg text-slate-300 font-semibold flex items-center gap-1">
-                                                <Target className="w-3.5 h-3.5 text-blue-400" />
-                                                Marks/Q: <strong className="text-white">{quiz.marksPerQuestion || 4}</strong>
+                                        ) : (
+                                            <span className="px-2.5 py-1 bg-slate-900/90 text-slate-400 border border-slate-700/80 rounded-full text-xs font-bold flex items-center gap-1">
+                                                <Lock className="w-3 h-3 text-slate-500" /> Leaderboard: Private
                                             </span>
+                                        )}
 
-                                            <span className="px-2.5 py-1 bg-slate-900 border border-slate-800 rounded-lg text-slate-300 font-semibold flex items-center gap-1">
-                                                <Hash className="w-3.5 h-3.5 text-indigo-400" />
-                                                Questions: <strong className="text-white">{quiz.questions?.length || 0}</strong>
+                                        {(quiz.isAnswerKeyPublic || quiz.answerKeyPublic) ? (
+                                            <span className="px-2.5 py-1 bg-purple-950/80 text-purple-300 border border-purple-800/80 rounded-full text-xs font-bold flex items-center gap-1">
+                                                <FileText className="w-3 h-3 text-purple-300" /> Answer Key: Released
                                             </span>
-
-                                            <span className="px-2.5 py-1 bg-slate-900 border border-slate-800 rounded-lg text-slate-300 font-semibold flex items-center gap-1">
-                                                <Users className="w-3.5 h-3.5 text-emerald-400" />
-                                                Submissions: <strong className="text-white">{subCount}</strong>
+                                        ) : (
+                                            <span className="px-2.5 py-1 bg-slate-900/90 text-slate-400 border border-slate-700/80 rounded-full text-xs font-bold flex items-center gap-1">
+                                                <Lock className="w-3 h-3 text-slate-500" /> Answer Key: Hidden
                                             </span>
-                                        </div>
+                                        )}
+                                    </div>
+                                </div>
 
-                                        <p className="text-[11px] text-slate-500 font-mono">
-                                            ID: {quiz.id} {createdDate ? `• Created: ${createdDate}` : ''} {quiz.createdBy ? `• By: ${quiz.createdBy}` : ''}
-                                        </p>
+                                {/* 2. Middle Section: Quiz Specs Badges & Metadata */}
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span className="px-2.5 py-1 bg-slate-900 border border-slate-800 rounded-lg text-slate-300 font-semibold flex items-center gap-1">
+                                            <Timer className="w-3.5 h-3.5 text-amber-400" />
+                                            Duration: <strong className="text-white">{quiz.duration} mins</strong>
+                                        </span>
+
+                                        <span className="px-2.5 py-1 bg-slate-900 border border-slate-800 rounded-lg text-slate-300 font-semibold flex items-center gap-1">
+                                            <Target className="w-3.5 h-3.5 text-blue-400" />
+                                            Marks/Q: <strong className="text-white">{quiz.marksPerQuestion || 4}</strong>
+                                        </span>
+
+                                        <span className="px-2.5 py-1 bg-slate-900 border border-slate-800 rounded-lg text-slate-300 font-semibold flex items-center gap-1">
+                                            <Hash className="w-3.5 h-3.5 text-indigo-400" />
+                                            Questions: <strong className="text-white">{quiz.questions?.length || 0}</strong>
+                                        </span>
+
+                                        <span className="px-2.5 py-1 bg-slate-900 border border-slate-800 rounded-lg text-slate-300 font-semibold flex items-center gap-1">
+                                            <Users className="w-3.5 h-3.5 text-emerald-400" />
+                                            Submissions: <strong className="text-white">{subCount}</strong>
+                                        </span>
                                     </div>
 
-                                    {/* Action Buttons Toolbar */}
-                                    <div className="flex items-center gap-2 flex-wrap shrink-0">
-                                        {/* ANALYTICS & STATS BUTTON */}
+                                    <p className="text-[11px] text-slate-500 font-mono truncate">
+                                        ID: {quiz.id} {createdDate ? `• Created: ${createdDate}` : ''} {quiz.createdBy ? `• By: ${quiz.createdBy}` : ''}
+                                    </p>
+                                </div>
+
+                                {/* 3. Bottom Section: Action Buttons Toolbar */}
+                                <div className="pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                                    {/* Left Group: Analytics & Student Release Toggles */}
+                                    <div className="flex items-center gap-2 flex-wrap">
                                         <button
                                             type="button"
                                             onClick={() => setAnalyticsQuiz(quiz)}
-                                            className="px-3 py-2 bg-purple-900/80 hover:bg-purple-800 border border-purple-700/80 text-purple-200 hover:text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-purple-900/30 cursor-pointer flex items-center gap-1.5"
+                                            className="px-3.5 py-2 bg-purple-900/80 hover:bg-purple-800 border border-purple-700/80 text-purple-200 hover:text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-purple-900/30 cursor-pointer flex items-center gap-1.5"
                                             title="View Leaderboard, Average Score, Charts, and Anti-Cheat Logs for this quiz"
                                         >
                                             <BarChart3 className="w-4 h-4 text-purple-300" />
                                             Analytics & Stats
                                         </button>
-                                        {/* Leaderboard Public / Private Toggle Button */}
+
                                         <button
                                             type="button"
                                             onClick={() => handleToggleLeaderboardPublic(quiz)}
@@ -2454,7 +2457,6 @@ const ManageQuizzesTab = ({ quizzes, submissions, activityLogs, onRefresh, admin
                                             {(quiz.isLeaderboardPublic || quiz.leaderboardPublic) ? 'Leaderboard: Public' : 'Leaderboard: Private'}
                                         </button>
 
-                                        {/* Answer Key Release / Hide Toggle Button */}
                                         <button
                                             type="button"
                                             onClick={() => handleToggleAnswerKeyPublic(quiz)}
@@ -2468,8 +2470,10 @@ const ManageQuizzesTab = ({ quizzes, submissions, activityLogs, onRefresh, admin
                                             <FileText className={`w-4 h-4 ${(quiz.isAnswerKeyPublic || quiz.answerKeyPublic) ? 'text-purple-300' : 'text-slate-500'}`} />
                                             {(quiz.isAnswerKeyPublic || quiz.answerKeyPublic) ? 'Answer Key: Released' : 'Answer Key: Hidden'}
                                         </button>
+                                    </div>
 
-                                        {/* Hide / Unhide Button */}
+                                    {/* Right Group: Management Actions */}
+                                    <div className="flex items-center gap-2 flex-wrap">
                                         <button
                                             type="button"
                                             onClick={() => handleToggleHide(quiz)}
@@ -2482,7 +2486,6 @@ const ManageQuizzesTab = ({ quizzes, submissions, activityLogs, onRefresh, admin
                                             {isHidden ? 'Unhide' : 'Hide'}
                                         </button>
 
-                                        {/* Toggle Status Button */}
                                         <button
                                             type="button"
                                             onClick={() => handleToggleStatus(quiz)}
@@ -2493,28 +2496,25 @@ const ManageQuizzesTab = ({ quizzes, submissions, activityLogs, onRefresh, admin
                                             {isCompleted ? 'Mark as Live' : 'Mark as Past'}
                                         </button>
 
-                                        {/* View Questions Accordion Toggle */}
                                         <button
                                             type="button"
                                             onClick={() => setExpandedQuizId(isExpanded ? null : quiz.id)}
                                             className="px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
                                         >
                                             <Eye className="w-4 h-4 text-blue-400" />
-                                            {isExpanded ? 'Hide Questions' : 'View Questions'}
+                                            {isExpanded ? 'Hide Qs' : 'View Qs'}
                                             {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                                         </button>
 
-                                        {/* EDIT QUIZ BUTTON */}
                                         <button
                                             type="button"
                                             onClick={() => handleStartEdit(quiz)}
-                                            className="px-4 py-2 bg-[#4169e2] hover:bg-[#3557c5] text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-600/20 cursor-pointer flex items-center gap-1.5"
+                                            className="px-3.5 py-2 bg-[#4169e2] hover:bg-[#3557c5] text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-600/20 cursor-pointer flex items-center gap-1.5"
                                         >
-                                            <Edit2 className="w-4 h-4" />
-                                            Edit Quiz
+                                            <Edit2 className="w-3.5 h-3.5" />
+                                            Edit
                                         </button>
 
-                                        {/* DELETE QUIZ BUTTON */}
                                         <button
                                             type="button"
                                             onClick={() => setDeleteConfirmId(quiz.id)}
@@ -2577,8 +2577,6 @@ const ManageQuizzesTab = ({ quizzes, submissions, activityLogs, onRefresh, admin
                     })
                 )}
             </div>
-
-            {/* DELETE CONFIRMATION MODAL */}
             {deleteConfirmId && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-[#131b2e] border border-red-900/80 rounded-2xl p-6 max-w-md w-full shadow-2xl text-center space-y-4">

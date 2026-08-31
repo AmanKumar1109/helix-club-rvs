@@ -4,7 +4,7 @@ import gsap from 'gsap';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, updateDoc, arrayRemove, query, where, serverTimestamp } from 'firebase/firestore';
-import { Clock, LogOut, ChevronRight, Trophy, User, Hash, BookOpen, Award, Timer, CheckCircle, XCircle, Sparkles, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Clock, LogOut, ChevronRight, Trophy, User, Hash, BookOpen, Award, Timer, CheckCircle, XCircle, Sparkles, ShieldCheck, AlertCircle, Lock, FileText, X, ChevronUp, ChevronDown, Check, HelpCircle, Mail, Phone } from 'lucide-react';
 import logoImg from './assets/logo.png';
 
 // Firebase Configuration
@@ -21,6 +21,41 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+// Helper function to fetch complete user registration details from Firestore
+const getUserProfile = async (firebaseUser) => {
+    if (!firebaseUser) return null;
+    let userData = {};
+
+    try {
+        // 1. Try direct doc lookup by uid
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        const userSnap = await getDoc(userDocRef);
+
+        if (userSnap.exists()) {
+            userData = userSnap.data();
+        } else if (firebaseUser.email) {
+            // 2. Fallback query by email if doc by uid doesn't exist
+            const emailQuery = query(collection(db, 'users'), where('email', '==', firebaseUser.email.trim()));
+            const emailSnap = await getDocs(emailQuery);
+            if (!emailSnap.empty) {
+                userData = emailSnap.docs[0].data();
+            }
+        }
+    } catch (err) {
+        console.error('Error fetching user profile from Firestore:', err);
+    }
+
+    const fallbackName = firebaseUser.displayName || (firebaseUser.email ? firebaseUser.email.split('@')[0] : 'Student');
+
+    return {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email || '',
+        fullName: userData.fullName || fallbackName,
+        rollNumber: userData.rollNumber || 'N/A',
+        phone: userData.phone || ''
+    };
+};
 
 // Anti-Cheat Hook
 const useAntiCheat = (user, quizId, isQuizActive) => {
@@ -185,14 +220,8 @@ const AuthScreen = ({ onLogin }) => {
         setLoginLoading(true);
         try {
             const result = await signInWithEmailAndPassword(auth, loginEmail.trim(), loginPassword);
-            const userDoc = await getDoc(doc(db, 'users', result.user.uid));
-            if (userDoc.exists()) {
-                const data = userDoc.data();
-                onLogin({ ...result.user, fullName: data.fullName, rollNumber: data.rollNumber, phone: data.phone });
-            } else {
-                setLoginError('Account found but profile missing. Please register again.');
-                await signOut(auth);
-            }
+            const userProfile = await getUserProfile(result.user);
+            onLogin(userProfile);
         } catch (err) {
             const msgs = {
                 'auth/user-not-found': 'No account found with this email.',
@@ -217,14 +246,18 @@ const AuthScreen = ({ onLogin }) => {
         setRegLoading(true);
         try {
             const result = await createUserWithEmailAndPassword(auth, regEmail.trim(), regPassword);
-            await setDoc(doc(db, 'users', result.user.uid), {
+            const userPayload = {
                 fullName: regName.trim(),
                 rollNumber: regRoll.trim(),
                 email: regEmail.trim(),
                 phone: regPhone.trim(),
                 createdAt: serverTimestamp()
+            };
+            await setDoc(doc(db, 'users', result.user.uid), userPayload);
+            onLogin({
+                uid: result.user.uid,
+                ...userPayload
             });
-            onLogin({ ...result.user, fullName: regName.trim(), rollNumber: regRoll.trim(), phone: regPhone.trim() });
         } catch (err) {
             const msgs = {
                 'auth/email-already-in-use': 'This email is already registered. Please login.',
@@ -751,27 +784,29 @@ const QuizList = ({ user, onLogout }) => {
             }));
             setQuizzes(quizData);
 
-            const submissionsQuery = query(
-                collection(db, 'submissions'),
-                where('userId', '==', user.uid)
-            );
-            const submissionsSnapshot = await getDocs(submissionsQuery);
-            const submissionsMap = {};
-            submissionsSnapshot.docs.forEach(doc => {
-                const data = doc.data();
-                submissionsMap[data.quizId] = {
-                    id: doc.id,
-                    score: data.score,
-                    totalMarks: data.totalMarks,
-                    totalQuestions: data.totalQuestions,
-                    correct: data.correct,
-                    wrong: data.wrong,
-                    notAttempted: data.notAttempted,
-                    timeTaken: data.timeTaken ?? null,
-                    answers: data.answers || {},
-                    submittedAt: data.submittedAt
-                };
-            });
+            let submissionsMap = {};
+            if (user?.uid) {
+                const submissionsQuery = query(
+                    collection(db, 'submissions'),
+                    where('userId', '==', user.uid)
+                );
+                const submissionsSnapshot = await getDocs(submissionsQuery);
+                submissionsSnapshot.docs.forEach(doc => {
+                    const data = doc.data();
+                    submissionsMap[data.quizId] = {
+                        id: doc.id,
+                        score: data.score,
+                        totalMarks: data.totalMarks,
+                        totalQuestions: data.totalQuestions,
+                        correct: data.correct,
+                        wrong: data.wrong,
+                        notAttempted: data.notAttempted,
+                        timeTaken: data.timeTaken ?? null,
+                        answers: data.answers || {},
+                        submittedAt: data.submittedAt
+                    };
+                });
+            }
             setSubmissions(submissionsMap);
         } catch (error) {
             console.error('Error loading data:', error);
@@ -974,102 +1009,6 @@ const QuizList = ({ user, onLogout }) => {
                             </button>
                         </div>
                     </div>
-
-                    {/* Profile Details Modal Overlay (Centered Screen Backdrop) */}
-                    {showProfilePanel && (
-                        <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-                            <div className="bg-[#0e1524] border border-slate-700/90 rounded-3xl max-w-sm w-full shadow-2xl overflow-hidden text-slate-100 animate-in fade-in zoom-in duration-200">
-                                {/* Top Banner Header */}
-                                <div className="bg-gradient-to-r from-[#4169e2]/20 to-indigo-600/20 px-5 py-4 border-b border-slate-800 flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#4169e2] to-indigo-500 text-white text-lg font-black flex items-center justify-center shadow-lg shadow-blue-600/30 shrink-0">
-                                            {user.fullName?.charAt(0)?.toUpperCase() || 'U'}
-                                        </div>
-                                        <div className="min-w-0">
-                                            <p className="text-sm font-black text-white truncate">{user.fullName}</p>
-                                            <p className="text-[11px] text-slate-400 truncate">{user.email}</p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() => setShowProfilePanel(false)}
-                                        className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-xl transition-colors cursor-pointer"
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </button>
-                                </div>
-
-                                {/* Profile Info Rows */}
-                                <div className="p-5 space-y-3.5 max-h-[60vh] overflow-y-auto">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-xl bg-blue-950/80 border border-blue-800/60 flex items-center justify-center shrink-0">
-                                            <User className="w-4 h-4 text-blue-400" />
-                                        </div>
-                                        <div className="min-w-0">
-                                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Full Name</p>
-                                            <p className="text-xs text-white font-semibold truncate">{user.fullName || '—'}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-xl bg-indigo-950/80 border border-indigo-800/60 flex items-center justify-center shrink-0">
-                                            <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                            </svg>
-                                        </div>
-                                        <div className="min-w-0">
-                                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Email</p>
-                                            <p className="text-xs text-white font-semibold truncate">{user.email || '—'}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-xl bg-emerald-950/80 border border-emerald-800/60 flex items-center justify-center shrink-0">
-                                            <Hash className="w-4 h-4 text-emerald-400" />
-                                        </div>
-                                        <div className="min-w-0">
-                                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Roll Number</p>
-                                            <p className="text-xs text-white font-semibold">{user.rollNumber || '—'}</p>
-                                        </div>
-                                    </div>
-
-                                    {user.phone && (
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-xl bg-amber-950/80 border border-amber-800/60 flex items-center justify-center shrink-0">
-                                                <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                                                </svg>
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Phone</p>
-                                                <p className="text-xs text-white font-semibold">{user.phone}</p>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0">
-                                            <Trophy className="w-4 h-4 text-amber-400" />
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Quizzes Completed</p>
-                                            <p className="text-xs text-white font-semibold">{completedCount} / {visibleQuizzes.length}</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Modal Footer */}
-                                <div className="p-5 border-t border-slate-800">
-                                    <button
-                                        onClick={() => { setShowProfilePanel(false); onLogout(); }}
-                                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-red-950/80 hover:bg-red-900 border border-red-800 text-red-300 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-lg"
-                                    >
-                                        <LogOut className="w-4 h-4" />
-                                        Sign Out Account
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
 
                     {/* Sub-Header Search & Mobile Navigation Tabs */}
                     <div className="bg-[#0b101c]/80 border-t border-slate-800/80 w-full">
@@ -1349,6 +1288,96 @@ const QuizList = ({ user, onLogout }) => {
                     quiz={reviewModalData.quiz}
                     onClose={() => setReviewModalData(null)}
                 />
+            )}
+
+            {/* STUDENT PROFILE DETAILS FLOATING POPUP CARD */}
+            {showProfilePanel && (
+                <div
+                    ref={profilePanelRef}
+                    className="fixed top-16 right-3 sm:right-6 lg:right-8 z-[150] w-80 sm:w-96 bg-[#0e1524]/95 backdrop-blur-xl border border-slate-700/90 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.9)] overflow-hidden text-slate-100 animate-in fade-in slide-in-from-top-4 duration-200"
+                >
+                    {/* Top Banner Header */}
+                    <div className="bg-gradient-to-r from-[#4169e2]/30 via-indigo-600/30 to-purple-600/30 px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+                        <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#4169e2] to-indigo-500 text-white text-lg font-black flex items-center justify-center shadow-lg shadow-blue-600/30 shrink-0 border border-blue-400/30">
+                                {user.fullName?.charAt(0)?.toUpperCase() || 'U'}
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-sm font-black text-white truncate">{user.fullName || 'Student Profile'}</p>
+                                <p className="text-[11px] text-slate-400 truncate">{user.email || 'Helix Quiz Member'}</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setShowProfilePanel(false)}
+                            className="w-8 h-8 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+
+                    {/* Profile Details Rows */}
+                    <div className="p-4 sm:p-5 space-y-3 max-h-[70vh] overflow-y-auto">
+                        <div className="flex items-center gap-3 bg-slate-900/70 p-3 rounded-2xl border border-slate-800/80">
+                            <div className="w-8 h-8 rounded-xl bg-blue-950/90 border border-blue-800/60 flex items-center justify-center shrink-0">
+                                <User className="w-4 h-4 text-blue-400" />
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Full Name</p>
+                                <p className="text-xs text-white font-bold truncate">{user.fullName || '—'}</p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 bg-slate-900/70 p-3 rounded-2xl border border-slate-800/80">
+                            <div className="w-8 h-8 rounded-xl bg-emerald-950/90 border border-emerald-800/60 flex items-center justify-center shrink-0">
+                                <Hash className="w-4 h-4 text-emerald-400" />
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Roll Number</p>
+                                <p className="text-xs text-emerald-400 font-bold">{user.rollNumber || '—'}</p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 bg-slate-900/70 p-3 rounded-2xl border border-slate-800/80">
+                            <div className="w-8 h-8 rounded-xl bg-indigo-950/90 border border-indigo-800/60 flex items-center justify-center shrink-0">
+                                <Mail className="w-4 h-4 text-indigo-400" />
+                            </div>
+                            <div className="min-w-0 truncate">
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Email Address</p>
+                                <p className="text-xs text-white font-semibold truncate">{user.email || '—'}</p>
+                            </div>
+                        </div>
+
+                        {user.phone && (
+                            <div className="flex items-center gap-3 bg-slate-900/70 p-3 rounded-2xl border border-slate-800/80">
+                                <div className="w-8 h-8 rounded-xl bg-amber-950/90 border border-amber-800/60 flex items-center justify-center shrink-0">
+                                    <Phone className="w-4 h-4 text-amber-400" />
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Phone</p>
+                                    <p className="text-xs text-white font-semibold">{user.phone}</p>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex items-center gap-3 bg-slate-900/70 p-3 rounded-2xl border border-slate-800/80">
+                            <div className="w-8 h-8 rounded-xl bg-purple-950/90 border border-purple-800/60 flex items-center justify-center shrink-0">
+                                <Trophy className="w-4 h-4 text-purple-400" />
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Quizzes Completed</p>
+                                <p className="text-xs text-purple-300 font-bold">{completedCount} <span className="text-slate-400 font-normal">/ {visibleQuizzes.length} Total</span></p>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={() => { setShowProfilePanel(false); onLogout(); }}
+                            className="w-full mt-2 py-2.5 bg-red-950/80 hover:bg-red-900/90 border border-red-800/80 text-red-300 hover:text-white rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                        >
+                            <LogOut className="w-4 h-4" />
+                            <span>Sign Out Account</span>
+                        </button>
+                    </div>
+                </div>
             )}
 
             {/* Bottom spacer */}
@@ -1997,21 +2026,9 @@ export const QuizTakeScreen = () => {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
-                try {
-                    const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-                    if (userDoc.exists()) {
-                        const userData = userDoc.data();
-                        setUserDetails({
-                            ...firebaseUser,
-                            fullName: userData.fullName,
-                            rollNumber: userData.rollNumber
-                        });
-                    } else {
-                        setUser(firebaseUser);
-                    }
-                } catch (err) {
-                    console.error('Error fetching user details:', err);
-                }
+                setUser(firebaseUser);
+                const userProfile = await getUserProfile(firebaseUser);
+                setUserDetails(userProfile);
             } else {
                 setUser(null);
                 setUserDetails(null);
@@ -2188,24 +2205,8 @@ export default function QuizzApp() {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
-                try {
-                    const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-                    if (userDoc.exists()) {
-                        const userData = userDoc.data();
-                        setUserDetails({
-                            ...firebaseUser,
-                            fullName: userData.fullName,
-                            rollNumber: userData.rollNumber,
-                            phone: userData.phone
-                        });
-                    } else {
-                        // Profile missing — force re-auth
-                        await signOut(auth);
-                        setUserDetails(null);
-                    }
-                } catch (error) {
-                    console.error('Error fetching user details:', error);
-                }
+                const userProfile = await getUserProfile(firebaseUser);
+                setUserDetails(userProfile);
             } else {
                 setUserDetails(null);
             }
