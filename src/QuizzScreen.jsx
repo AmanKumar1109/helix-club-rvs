@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import gsap from 'gsap';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, query, where, serverTimestamp } from 'firebase/firestore';
 import { Clock, LogOut, ChevronRight, Trophy, User, Hash, BookOpen, Award, Timer, CheckCircle, XCircle, Sparkles, ShieldCheck, AlertCircle } from 'lucide-react';
 import logoImg from './assets/logo.png';
@@ -53,12 +53,45 @@ const useAntiCheat = (user, quizId, isQuizActive) => {
             logActivity('Window lost focus');
         };
 
+        // Split screen / window resize detection
+        const originalWidth = window.innerWidth;
+        let resizeTimer;
+        const handleResize = () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                const newWidth = window.innerWidth;
+                const shrinkPercent = ((originalWidth - newWidth) / originalWidth) * 100;
+                if (shrinkPercent > 20) {
+                    logActivity(`Window resized (possible split screen) — width: ${newWidth}px`);
+                }
+            }, 500);
+        };
+
+        // Screen capture / screen recording detection (browser-level)
+        const handleCaptureDetected = () => {
+            logActivity('Screen capture / screen recording detected');
+        };
+
+        // PrintScreen key press attempt log
+        const handlePrintScreen = (e) => {
+            if (e.key === 'PrintScreen') {
+                logActivity('PrintScreen key pressed during quiz');
+            }
+        };
+
         document.addEventListener('visibilitychange', handleVisibilityChange);
         window.addEventListener('blur', handleBlur);
+        window.addEventListener('resize', handleResize);
+        document.addEventListener('helix:capture-detected', handleCaptureDetected);
+        document.addEventListener('keyup', handlePrintScreen);
 
         return () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('blur', handleBlur);
+            window.removeEventListener('resize', handleResize);
+            document.removeEventListener('helix:capture-detected', handleCaptureDetected);
+            document.removeEventListener('keyup', handlePrintScreen);
+            clearTimeout(resizeTimer);
         };
     }, [user, quizId, isQuizActive]);
 };
@@ -96,278 +129,322 @@ const useQuizTimer = (duration, onTimeUp, isActive) => {
     return { timeLeft, formatTime };
 };
 
-// Login Component (GSAP Animated)
-const Login = ({ onLogin }) => {
-    const [loading, setLoading] = useState(false);
+// Auth Screen — Login + Register tabs (Email/Password)
+const AuthScreen = ({ onLogin }) => {
+    const [tab, setTab] = useState('login'); // 'login' | 'register'
     const cardRef = useRef(null);
     const logoRef = useRef(null);
+
+    // Login state
+    const [loginEmail, setLoginEmail] = useState('');
+    const [loginPassword, setLoginPassword] = useState('');
+    const [loginLoading, setLoginLoading] = useState(false);
+    const [loginError, setLoginError] = useState('');
+
+    // Register state
+    const [regName, setRegName] = useState('');
+    const [regEmail, setRegEmail] = useState('');
+    const [regPassword, setRegPassword] = useState('');
+    const [regPhone, setRegPhone] = useState('');
+    const [regRoll, setRegRoll] = useState('');
+    const [regLoading, setRegLoading] = useState(false);
+    const [regError, setRegError] = useState('');
+    const [showLoginPwd, setShowLoginPwd] = useState(false);
+    const [showRegPwd, setShowRegPwd] = useState(false);
 
     useEffect(() => {
         if (cardRef.current) {
             gsap.fromTo(
                 cardRef.current.children,
                 { opacity: 0, y: 24, scale: 0.97 },
-                { opacity: 1, y: 0, scale: 1, duration: 0.6, stagger: 0.1, ease: 'power3.out' }
+                { opacity: 1, y: 0, scale: 1, duration: 0.6, stagger: 0.08, ease: 'power3.out' }
             );
         }
-        gsap.to('.gsap-ambient-glow', {
-            y: '-=15',
-            scale: 1.05,
-            duration: 4,
-            repeat: -1,
-            yoyo: true,
-            ease: 'sine.inOut'
-        });
-        // Pulsing glow rings around logo
-        gsap.to('.login-logo-ring', {
-            scale: 1.35,
-            opacity: 0,
-            duration: 1.8,
-            repeat: -1,
-            ease: 'power1.out',
-            stagger: 0.6
-        });
-        // Animated card gradient border
-        gsap.to('.login-card-border', {
-            backgroundPosition: '200% center',
-            duration: 4,
-            repeat: -1,
-            ease: 'none'
-        });
-        // Spinning orbit rings
+        gsap.to('.gsap-ambient-glow', { y: '-=15', scale: 1.05, duration: 4, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+        gsap.to('.login-logo-ring', { scale: 1.35, opacity: 0, duration: 1.8, repeat: -1, ease: 'power1.out', stagger: 0.6 });
+        gsap.to('.login-card-border', { backgroundPosition: '200% center', duration: 4, repeat: -1, ease: 'none' });
         gsap.to('.orbit-ring-1', { rotation: 360, duration: 12, repeat: -1, ease: 'none', transformOrigin: 'center center' });
         gsap.to('.orbit-ring-2', { rotation: -360, duration: 18, repeat: -1, ease: 'none', transformOrigin: 'center center' });
     }, []);
 
-    const handleGoogleLogin = async () => {
-        setLoading(true);
+    // Re-animate on tab switch
+    useEffect(() => {
+        if (cardRef.current) {
+            gsap.fromTo(
+                cardRef.current.querySelectorAll('.form-field'),
+                { opacity: 0, y: 12 },
+                { opacity: 1, y: 0, duration: 0.35, stagger: 0.06, ease: 'power2.out' }
+            );
+        }
+    }, [tab]);
+
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        setLoginError('');
+        if (!loginEmail.trim() || !loginPassword) { setLoginError('Please fill all fields.'); return; }
+        setLoginLoading(true);
         try {
-            const provider = new GoogleAuthProvider();
-            const result = await signInWithPopup(auth, provider);
-            onLogin(result.user);
-        } catch (error) {
-            console.error('Login error:', error);
-            alert('Login failed. Please try again.');
+            const result = await signInWithEmailAndPassword(auth, loginEmail.trim(), loginPassword);
+            const userDoc = await getDoc(doc(db, 'users', result.user.uid));
+            if (userDoc.exists()) {
+                const data = userDoc.data();
+                onLogin({ ...result.user, fullName: data.fullName, rollNumber: data.rollNumber, phone: data.phone });
+            } else {
+                setLoginError('Account found but profile missing. Please register again.');
+                await signOut(auth);
+            }
+        } catch (err) {
+            const msgs = {
+                'auth/user-not-found': 'No account found with this email.',
+                'auth/wrong-password': 'Incorrect password. Please try again.',
+                'auth/invalid-credential': 'Invalid email or password.',
+                'auth/too-many-requests': 'Too many attempts. Please try later.',
+            };
+            setLoginError(msgs[err.code] || 'Login failed. Please try again.');
         } finally {
-            setLoading(false);
+            setLoginLoading(false);
         }
     };
 
+    const handleRegister = async (e) => {
+        e.preventDefault();
+        setRegError('');
+        if (!regName.trim() || !regEmail.trim() || !regPassword || !regPhone.trim() || !regRoll.trim()) {
+            setRegError('Please fill in all fields.'); return;
+        }
+        if (regPassword.length < 6) { setRegError('Password must be at least 6 characters.'); return; }
+        if (!/^[6-9]\d{9}$/.test(regPhone.trim())) { setRegError('Enter a valid 10-digit Indian phone number.'); return; }
+        setRegLoading(true);
+        try {
+            const result = await createUserWithEmailAndPassword(auth, regEmail.trim(), regPassword);
+            await setDoc(doc(db, 'users', result.user.uid), {
+                fullName: regName.trim(),
+                rollNumber: regRoll.trim(),
+                email: regEmail.trim(),
+                phone: regPhone.trim(),
+                createdAt: serverTimestamp()
+            });
+            onLogin({ ...result.user, fullName: regName.trim(), rollNumber: regRoll.trim(), phone: regPhone.trim() });
+        } catch (err) {
+            const msgs = {
+                'auth/email-already-in-use': 'This email is already registered. Please login.',
+                'auth/invalid-email': 'Invalid email address.',
+                'auth/weak-password': 'Password is too weak. Use at least 6 characters.',
+            };
+            setRegError(msgs[err.code] || 'Registration failed. Please try again.');
+        } finally {
+            setRegLoading(false);
+        }
+    };
+
+    const inputClass = 'w-full px-4 py-3 bg-slate-900/90 border border-slate-700 rounded-xl text-white text-sm font-medium outline-none placeholder-slate-500 focus:ring-2 focus:ring-[#4169e2] focus:border-transparent transition-all';
+
     return (
         <div className="min-h-screen bg-[#0b0f17] flex flex-col justify-between items-center p-4 sm:p-6 relative overflow-hidden font-sans select-none text-slate-100">
-            {/* Ambient Background Gradient Blurs (Dark Glow) */}
             <div className="gsap-ambient-glow absolute top-1/4 -left-20 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
             <div className="gsap-ambient-glow absolute top-1/3 -right-20 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none"></div>
-
-            {/* Left Organic Fluid Blob (Dark Translucent) */}
             <div className="absolute -left-16 sm:-left-8 top-1/4 w-72 sm:w-96 h-72 sm:h-96 pointer-events-none select-none z-0 opacity-20">
                 <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-blue-500 fill-current">
                     <path d="M44.7,-76.4C58.8,-69.2,71.8,-59.1,79.6,-45.8C87.4,-32.6,90,-16.3,88.5,-0.9C87,14.6,81.4,29.1,73.1,42.2C64.8,55.3,53.8,66.9,40.4,74.1C27.1,81.3,13.5,84.1,-0.5,85C-14.6,85.8,-29.1,84.7,-42.2,78.2C-55.3,71.8,-66.9,60,-74.8,46.1C-82.7,32.2,-86.8,16.1,-86.3,0.3C-85.8,-15.6,-80.6,-31.1,-71.9,-43.8C-63.1,-56.4,-50.7,-66.1,-37.2,-73.6C-23.7,-81,-11.8,-86.1,1.7,-89C15.3,-92,30.6,-83.6,44.7,-76.4Z" transform="translate(100 100)" />
                 </svg>
             </div>
-
-            {/* Right Organic Fluid Blob (Dark Translucent) */}
             <div className="absolute -right-16 sm:-right-8 top-1/3 w-80 sm:w-112 h-80 sm:h-112 pointer-events-none select-none z-0 opacity-20">
                 <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-indigo-500 fill-current">
                     <path d="M47.7,-79.8C61.4,-73.4,71.9,-59.9,78.4,-44.8C84.8,-29.7,87.2,-14.8,85.4,0.1C83.5,14.9,77.4,29.8,69.5,43.2C61.7,56.5,52.1,68.3,39.6,75.7C27.1,83.1,11.7,86.1,-3.8,92.7C-19.3,99.3,-34.9,109.5,-47.9,104.9C-60.9,100.3,-71.4,80.9,-78.9,64.2C-86.4,47.5,-90.9,33.5,-91.9,19.2C-92.9,4.9,-90.4,-9.7,-84.9,-23.4C-79.3,-37.1,-70.7,-49.9,-59,-57.2C-47.3,-64.5,-32.5,-66.3,-18.4,-72.1C-4.3,-77.9,9,-87.7,24,-89.8C38.9,-91.9,55.5,-86.3,47.7,-79.8Z" transform="translate(100 100)" />
                 </svg>
             </div>
 
-            {/* Decorative Geometric Floating Elements */}
-            <div className="absolute top-12 left-1/2 -translate-x-12 w-20 h-20 rounded-full border border-blue-500/20 pointer-events-none"></div>
-            <div className="absolute top-20 right-1/4 w-3.5 h-3.5 rounded-full bg-indigo-500/50 pointer-events-none"></div>
-            <div className="absolute top-24 left-12 sm:left-28 w-8 h-8 bg-blue-500/20 rotate-12 rounded-lg pointer-events-none"></div>
-            <div className="absolute bottom-28 right-16 sm:right-36 w-6 h-6 bg-indigo-500/20 rotate-45 rounded-sm pointer-events-none"></div>
-            <div className="absolute bottom-20 left-1/3 w-10 h-10 rounded-full border border-blue-400/20 pointer-events-none"></div>
-
-            {/* Top spacer */}
             <div className="w-full h-2"></div>
 
-            {/* Center Modern Dark Login Card */}
             <div className="relative z-10 my-auto w-full max-w-md">
-                {/* Animated gradient border wrapper */}
-                <div className="login-card-border absolute inset-0 rounded-3xl p-[1.5px] bg-gradient-to-r from-blue-600 via-indigo-400 to-blue-600 bg-[length:200%_auto] opacity-60" style={{background: 'linear-gradient(90deg,#4169e2,#818cf8,#4169e2)', backgroundSize: '200% auto'}}></div>
-                <div ref={cardRef} className="relative bg-[#0e1524]/95 backdrop-blur-xl rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.7)] p-8 sm:p-10 text-center transition-all">
-                {/* Helix Logo with pulsing rings */}
-                <div className="flex justify-center mb-4 relative">
-                    {/* Pulsing glow rings */}
-                    <div className="login-logo-ring absolute inset-0 m-auto w-20 h-20 rounded-full border-2 border-blue-500/50"></div>
-                    <div className="login-logo-ring absolute inset-0 m-auto w-20 h-20 rounded-full border-2 border-indigo-500/40" style={{animationDelay: '0.6s'}}></div>
-                    {/* Orbit rings */}
-                    <div className="orbit-ring-1 absolute inset-0 m-auto w-28 h-28 rounded-full border border-dashed border-blue-500/20"></div>
-                    <div className="orbit-ring-2 absolute inset-0 m-auto w-36 h-36 rounded-full border border-dashed border-indigo-500/15"></div>
-                    <img
-                        ref={logoRef}
-                        src={logoImg}
-                        alt="Helix Logo"
-                        className="relative w-18 h-18 sm:w-20 sm:h-20 object-contain drop-shadow-[0_0_20px_rgba(65,105,226,0.6)] hover:scale-105 transition-transform duration-300 z-10"
-                    />
-                </div>
+                <div className="login-card-border absolute inset-0 rounded-3xl p-[1.5px] opacity-60" style={{background:'linear-gradient(90deg,#4169e2,#818cf8,#4169e2)', backgroundSize:'200% auto'}}></div>
+                <div ref={cardRef} className="relative bg-[#0e1524]/95 backdrop-blur-xl rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.7)] p-7 sm:p-9 transition-all">
 
-                {/* Title */}
-                <h1 className="text-xl font-black text-white tracking-tight mt-1 mb-1">
-                    Helix Club Quiz
-                </h1>
-                <p className="text-xs font-semibold tracking-widest text-slate-400 uppercase mb-1.5">
-                    Assessment & Contest Portal
-                </p>
-                <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400 font-medium mb-7">
-                    <span>powered by</span>
-                    <a
-                        href="https://zectral.vercel.app/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-bold text-[#4169e2] hover:text-[#587ef0] underline decoration-blue-500/50 underline-offset-2 hover:decoration-blue-400 transition-colors"
-                    >
-                        ZECTRAL
-                    </a>
-                </div>
+                    {/* Logo */}
+                    <div className="flex justify-center mb-4 relative">
+                        <div className="login-logo-ring absolute inset-0 m-auto w-20 h-20 rounded-full border-2 border-blue-500/50"></div>
+                        <div className="login-logo-ring absolute inset-0 m-auto w-20 h-20 rounded-full border-2 border-indigo-500/40"></div>
+                        <div className="orbit-ring-1 absolute inset-0 m-auto w-28 h-28 rounded-full border border-dashed border-blue-500/20"></div>
+                        <div className="orbit-ring-2 absolute inset-0 m-auto w-36 h-36 rounded-full border border-dashed border-indigo-500/15"></div>
+                        <img ref={logoRef} src={logoImg} alt="Helix Logo" className="relative w-16 h-16 object-contain drop-shadow-[0_0_20px_rgba(65,105,226,0.6)] z-10" />
+                    </div>
 
-                {/* Google Sign In Button with #4169e2 */}
-                <div className="space-y-4">
-                    <button
-                        onClick={handleGoogleLogin}
-                        disabled={loading}
-                        className="w-full bg-[#4169e2] hover:bg-[#3557c5] active:scale-[0.99] text-white rounded-2xl px-6 py-3.5 font-bold text-sm sm:text-base shadow-lg shadow-blue-600/30 flex items-center justify-center gap-3 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group cursor-pointer"
-                    >
-                        {loading ? (
-                            <div className="flex items-center gap-2">
-                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                <span>Signing in...</span>
+                    <h1 className="text-xl font-black text-white tracking-tight text-center mb-0.5">Helix Club Quiz</h1>
+                    <p className="text-xs font-semibold tracking-widest text-slate-400 uppercase text-center mb-1">Assessment &amp; Contest Portal</p>
+                    <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400 font-medium mb-5">
+                        <span>powered by</span>
+                        <a href="https://zectral.vercel.app/" target="_blank" rel="noopener noreferrer" className="font-bold text-[#4169e2] hover:text-[#587ef0] underline underline-offset-2 transition-colors">ZECTRAL</a>
+                    </div>
+
+                    {/* Tabs */}
+                    <div className="flex bg-slate-900/80 rounded-2xl p-1 mb-6 border border-slate-800">
+                        <button
+                            onClick={() => setTab('login')}
+                            className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${tab === 'login' ? 'bg-[#4169e2] text-white shadow-md shadow-blue-600/30' : 'text-slate-400 hover:text-white'}`}
+                        >Login</button>
+                        <button
+                            onClick={() => setTab('register')}
+                            className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${tab === 'register' ? 'bg-[#4169e2] text-white shadow-md shadow-blue-600/30' : 'text-slate-400 hover:text-white'}`}
+                        >Register</button>
+                    </div>
+
+                    {/* LOGIN FORM */}
+                    {tab === 'login' && (
+                        <form onSubmit={handleLogin} className="space-y-4">
+                            <div className="form-field">
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Email</label>
+                                <input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} className={inputClass} placeholder="your@email.com" autoComplete="email" />
                             </div>
-                        ) : (
-                            <>
-                                <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center p-1 shadow-sm shrink-0">
-                                    <svg className="w-4 h-4" viewBox="0 0 24 24">
-                                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                                    </svg>
-                                </div>
-                                <span className="tracking-wider">SIGN IN WITH GOOGLE</span>
-                            </>
-                        )}
-                    </button>
-                </div>
+                            <div className="form-field relative">
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Password</label>
+                                <input type={showLoginPwd ? 'text' : 'password'} value={loginPassword} onChange={e => setLoginPassword(e.target.value)} className={inputClass + ' pr-11'} placeholder="••••••••" autoComplete="current-password" />
+                                <button type="button" onClick={() => setShowLoginPwd(p => !p)} className="absolute right-3 top-9 text-slate-400 hover:text-white transition-colors cursor-pointer">
+                                    {showLoginPwd
+                                        ? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+                                        : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                    }
+                                </button>
+                            </div>
+                            {loginError && <p className="form-field text-xs text-red-400 font-semibold bg-red-950/40 border border-red-800/60 rounded-xl px-3 py-2">{loginError}</p>}
+                            <button type="submit" disabled={loginLoading} className="form-field w-full bg-[#4169e2] hover:bg-[#3557c5] active:scale-[0.99] text-white rounded-2xl px-6 py-3.5 font-bold text-sm shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer mt-1">
+                                {loginLoading ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>Signing in...</> : 'Login to Quiz Portal →'}
+                            </button>
+                        </form>
+                    )}
 
-                {/* Security Footnote */}
-                <div className="mt-8 pt-6 border-t border-slate-800 flex items-center justify-center gap-3 text-xs text-slate-400">
-                    <span className="flex items-center gap-1 font-medium"><ShieldCheck className="w-3.5 h-3.5 text-blue-400" /> Secure Login</span>
-                    <span className="text-slate-600">•</span>
-                    <span className="flex items-center gap-1 font-medium"><Sparkles className="w-3.5 h-3.5 text-amber-400" /> Anti-Cheat Active</span>
-                </div>
+                    {/* REGISTER FORM */}
+                    {tab === 'register' && (
+                        <form onSubmit={handleRegister} className="space-y-3">
+                            <div className="form-field">
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Full Name *</label>
+                                <input type="text" value={regName} onChange={e => setRegName(e.target.value)} className={inputClass} placeholder="e.g. Rahul Sharma" autoComplete="name" />
+                            </div>
+                            <div className="form-field">
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Email *</label>
+                                <input type="email" value={regEmail} onChange={e => setRegEmail(e.target.value)} className={inputClass} placeholder="your@email.com" autoComplete="email" />
+                            </div>
+                            <div className="form-field relative">
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Password *</label>
+                                <input type={showRegPwd ? 'text' : 'password'} value={regPassword} onChange={e => setRegPassword(e.target.value)} className={inputClass + ' pr-11'} placeholder="Min. 6 characters" autoComplete="new-password" />
+                                <button type="button" onClick={() => setShowRegPwd(p => !p)} className="absolute right-3 top-9 text-slate-400 hover:text-white transition-colors cursor-pointer">
+                                    {showRegPwd
+                                        ? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+                                        : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                    }
+                                </button>
+                            </div>
+                            <div className="form-field">
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Phone Number *</label>
+                                <input type="tel" value={regPhone} onChange={e => setRegPhone(e.target.value)} className={inputClass} placeholder="10-digit mobile number" maxLength={10} autoComplete="tel" />
+                            </div>
+                            <div className="form-field">
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Roll Number *</label>
+                                <input type="text" value={regRoll} onChange={e => setRegRoll(e.target.value)} className={inputClass} placeholder="e.g. 23BCE1045" />
+                            </div>
+                            {regError && <p className="form-field text-xs text-red-400 font-semibold bg-red-950/40 border border-red-800/60 rounded-xl px-3 py-2">{regError}</p>}
+                            <button type="submit" disabled={regLoading} className="form-field w-full bg-[#4169e2] hover:bg-[#3557c5] active:scale-[0.99] text-white rounded-2xl px-6 py-3.5 font-bold text-sm shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer mt-1">
+                                {regLoading ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>Creating Account...</> : 'Create Account & Continue →'}
+                            </button>
+                        </form>
+                    )}
+
+                    {/* Footer */}
+                    <div className="mt-6 pt-5 border-t border-slate-800 flex items-center justify-center gap-3 text-xs text-slate-400">
+                        <span className="flex items-center gap-1 font-medium"><ShieldCheck className="w-3.5 h-3.5 text-blue-400" /> Secure Auth</span>
+                        <span className="text-slate-600">•</span>
+                        <span className="flex items-center gap-1 font-medium"><Sparkles className="w-3.5 h-3.5 text-amber-400" /> Anti-Cheat Active</span>
+                    </div>
                 </div>
             </div>
 
-            {/* Bottom spacer */}
             <div className="w-full h-2"></div>
         </div>
     );
 };
 
-// User Details Component (GSAP Animated)
-const UserDetails = ({ user, onComplete }) => {
-    const [fullName, setFullName] = useState('');
-    const [rollNumber, setRollNumber] = useState('');
-    const [loading, setLoading] = useState(false);
-    const formCardRef = useRef(null);
+// Leaderboard Panel Component — shows ranked students for a given quiz
+const LeaderboardPanel = ({ quizId, myUserId, formatSecs }) => {
+    const [entries, setEntries] = useState([]);
+    const [lbLoading, setLbLoading] = useState(true);
 
     useEffect(() => {
-        if (formCardRef.current) {
-            gsap.fromTo(
-                formCardRef.current.children,
-                { opacity: 0, y: 20, scale: 0.98 },
-                { opacity: 1, y: 0, scale: 1, duration: 0.5, stagger: 0.08, ease: 'power3.out' }
-            );
-        }
-    }, []);
+        const fetchLeaderboard = async () => {
+            try {
+                const q = query(collection(db, 'submissions'), where('quizId', '==', quizId));
+                const snap = await getDocs(q);
+                const data = snap.docs.map(d => d.data());
+                // Sort: highest score first, then lowest timeTaken
+                data.sort((a, b) => {
+                    if (b.score !== a.score) return b.score - a.score;
+                    const ta = a.timeTaken ?? Infinity;
+                    const tb = b.timeTaken ?? Infinity;
+                    return ta - tb;
+                });
+                setEntries(data);
+            } catch (err) {
+                console.error('Leaderboard fetch error:', err);
+            } finally {
+                setLbLoading(false);
+            }
+        };
+        fetchLeaderboard();
+    }, [quizId]);
 
-    const handleSubmit = async () => {
-        if (!fullName.trim() || !rollNumber.trim()) {
-            alert('Please fill in all fields');
-            return;
-        }
+    if (lbLoading) return (
+        <div className="flex items-center justify-center py-3">
+            <div className="w-4 h-4 border-2 border-[#4169e2] border-t-transparent rounded-full animate-spin"></div>
+            <span className="ml-2 text-xs text-slate-400">Loading...</span>
+        </div>
+    );
 
-        setLoading(true);
-        try {
-            await setDoc(doc(db, 'users', user.uid), {
-                fullName: fullName.trim(),
-                rollNumber: rollNumber.trim(),
-                email: user.email,
-                createdAt: serverTimestamp()
-            });
-            onComplete({ ...user, fullName, rollNumber });
-        } catch (error) {
-            console.error('Error saving user details:', error);
-            alert('Failed to save details. Please try again.');
-        } finally {
-            setLoading(false);
-        }
-    };
+    if (entries.length === 0) return (
+        <p className="text-xs text-slate-500 text-center py-2">No submissions yet.</p>
+    );
+
+    const medals = ['🥇', '🥈', '🥉'];
 
     return (
-        <div className="min-h-screen bg-[#0b0f17] flex flex-col justify-between items-center p-4 sm:p-6 font-sans text-slate-100 relative overflow-hidden">
-            <div className="gsap-ambient-glow absolute top-1/4 -left-20 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
-            <div className="gsap-ambient-glow absolute top-1/3 -right-20 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none"></div>
-
-            <div ref={formCardRef} className="w-full max-w-md bg-[#131b2e]/90 backdrop-blur-xl rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-slate-800 p-8 sm:p-10 my-auto text-center relative z-10">
-                <div className="flex justify-center mb-4">
-                    <img src={logoImg} alt="Helix Logo" className="w-14 h-14 object-contain drop-shadow-[0_0_15px_rgba(65,105,226,0.3)]" />
-                </div>
-                <h2 className="text-2xl font-bold text-white mb-1">Complete Your Profile</h2>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Helix Club Quiz Registration</p>
-                <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400 font-medium mb-6">
-                    <span>powered by</span>
-                    <a
-                        href="https://zectral.vercel.app/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-bold text-[#4169e2] hover:text-[#587ef0] underline decoration-blue-500/50 underline-offset-2 hover:decoration-blue-400 transition-colors"
+        <div className="space-y-2">
+            {entries.slice(0, 10).map((entry, idx) => {
+                const isMe = entry.userId === myUserId;
+                return (
+                    <div
+                        key={entry.userId + idx}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs transition-all ${
+                            isMe
+                                ? 'bg-blue-950/70 border border-blue-700/60 text-white'
+                                : 'bg-slate-900/60 border border-slate-800 text-slate-300'
+                        }`}
                     >
-                        ZECTRAL
-                    </a>
-                </div>
-
-                <div className="space-y-5 text-left">
-                    <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                            Full Name *
-                        </label>
-                        <input
-                            type="text"
-                            value={fullName}
-                            onChange={(e) => setFullName(e.target.value)}
-                            className="w-full px-4 py-3 border border-slate-700 rounded-xl focus:ring-2 focus:ring-[#4169e2] focus:border-transparent text-white text-sm font-medium outline-none bg-slate-900/90 placeholder-slate-500"
-                            placeholder="e.g. Rahul Sharma"
-                        />
+                        {/* Rank */}
+                        <span className="shrink-0 w-6 text-center font-black text-sm">
+                            {idx < 3 ? medals[idx] : `#${idx + 1}`}
+                        </span>
+                        {/* Name + Roll */}
+                        <div className="flex-1 min-w-0">
+                            <p className={`font-bold truncate ${isMe ? 'text-blue-200' : 'text-slate-200'}`}>
+                                {entry.userName || 'Student'} {isMe && <span className="text-blue-400 text-[10px]">(You)</span>}
+                            </p>
+                            <p className="text-[10px] text-slate-500 truncate">{entry.rollNumber || '—'}</p>
+                        </div>
+                        {/* Score */}
+                        <div className="text-right shrink-0">
+                            <p className={`font-black ${isMe ? 'text-blue-300' : 'text-emerald-400'}`}>
+                                {entry.score}/{entry.totalMarks}
+                            </p>
+                            <p className="text-[10px] text-amber-400 flex items-center justify-end gap-0.5">
+                                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="10" strokeWidth="2"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6l4 2"/>
+                                </svg>
+                                {formatSecs(entry.timeTaken)}
+                            </p>
+                        </div>
                     </div>
-
-                    <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                            Roll Number *
-                        </label>
-                        <input
-                            type="text"
-                            value={rollNumber}
-                            onChange={(e) => setRollNumber(e.target.value)}
-                            className="w-full px-4 py-3 border border-slate-700 rounded-xl focus:ring-2 focus:ring-[#4169e2] focus:border-transparent text-white text-sm font-medium outline-none bg-slate-900/90 placeholder-slate-500"
-                            placeholder="e.g. 23BCE1045"
-                        />
-                    </div>
-
-                    <button
-                        onClick={handleSubmit}
-                        disabled={loading}
-                        className="w-full bg-[#4169e2] hover:bg-[#3557c5] text-white rounded-xl px-6 py-3.5 font-bold text-sm shadow-lg shadow-blue-600/30 transition-all disabled:opacity-50 mt-2 cursor-pointer"
-                    >
-                        {loading ? 'Saving Profile...' : 'Save & Continue to Quizzes →'}
-                    </button>
-                </div>
-            </div>
-
-            {/* Bottom spacer */}
-            <div className="w-full h-2"></div>
+                );
+            })}
+            {entries.length > 10 && (
+                <p className="text-[10px] text-slate-500 text-center pt-1">+ {entries.length - 10} more participants</p>
+            )}
         </div>
     );
 };
@@ -498,6 +575,7 @@ const QuizList = ({ user, onLogout }) => {
                 submissionsMap[data.quizId] = {
                     score: data.score,
                     totalMarks: data.totalMarks,
+                    timeTaken: data.timeTaken ?? null,
                     submittedAt: data.submittedAt
                 };
             });
@@ -762,6 +840,28 @@ const QuizList = ({ user, onLogout }) => {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Per-Quiz Leaderboard Panel */}
+                        {quizzes.map(quiz => {
+                            const isSubmitted = !!submissions[quiz.id];
+                            if (!isSubmitted) return null;
+                            const mySubmission = submissions[quiz.id];
+                            const formatSecs = (s) => {
+                                if (s == null) return '—';
+                                const m = Math.floor(s / 60);
+                                const sec = s % 60;
+                                return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
+                            };
+                            return (
+                                <div key={quiz.id} className="bg-[#131b2e]/90 rounded-3xl p-5 border border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <Trophy className="w-4 h-4 text-amber-400" />
+                                        <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider truncate">{quiz.name}</h4>
+                                    </div>
+                                    <LeaderboardPanel quizId={quiz.id} myUserId={user.uid} formatSecs={formatSecs} />
+                                </div>
+                            );
+                        })}
                     </aside>
 
                     {/* Right Quiz Grid */}
@@ -866,9 +966,17 @@ const QuizList = ({ user, onLogout }) => {
                                                 </div>
 
                                                 {isSubmitted ? (
-                                                    <div className="px-4 py-2 bg-emerald-600/90 text-white rounded-2xl text-xs font-bold shadow-sm flex items-center gap-1.5">
-                                                        <CheckCircle className="w-3.5 h-3.5" />
-                                                        <span>Score: {submissions[quiz.id].score}/{submissions[quiz.id].totalMarks || totalMarks}</span>
+                                                    <div className="flex flex-col gap-1 items-end">
+                                                        <div className="px-4 py-2 bg-emerald-600/90 text-white rounded-2xl text-xs font-bold shadow-sm flex items-center gap-1.5">
+                                                            <CheckCircle className="w-3.5 h-3.5" />
+                                                            <span>Score: {submissions[quiz.id].score}/{submissions[quiz.id].totalMarks || totalMarks}</span>
+                                                        </div>
+                                                        {submissions[quiz.id].timeTaken != null && (
+                                                            <div className="px-3 py-1 bg-slate-800/90 text-slate-300 rounded-xl text-[11px] font-semibold flex items-center gap-1 border border-slate-700/60">
+                                                                <Timer className="w-3 h-3 text-amber-400" />
+                                                                Time: {Math.floor(submissions[quiz.id].timeTaken / 60)}m {submissions[quiz.id].timeTaken % 60}s
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 ) : (
                                                     <button
@@ -981,11 +1089,14 @@ const Quiz = ({ user, quiz, onComplete }) => {
         !submitted
     );
 
+    const quizStartTime = useRef(Date.now());
+
     const submitQuiz = async () => {
         if (submitted) return;
 
         setSubmitted(true);
 
+        const timeTaken = Math.round((Date.now() - quizStartTime.current) / 1000);
         const marksPerQuestion = Number(quiz.marksPerQuestion) || 4;
         let score = 0;
         let correct = 0;
@@ -1019,6 +1130,7 @@ const Quiz = ({ user, quiz, onComplete }) => {
                 correct,
                 wrong,
                 notAttempted,
+                timeTaken,
                 answers,
                 submittedAt: serverTimestamp()
             });
@@ -1145,10 +1257,43 @@ const Quiz = ({ user, quiz, onComplete }) => {
                             <span className="text-xs font-extrabold uppercase tracking-wider px-3 py-1 bg-blue-950/80 text-blue-300 border border-blue-800/60 rounded-full">
                                 Question {currentQuestion + 1}
                             </span>
+                            {question.codeSnippet && (
+                                <span className="text-xs font-bold px-2.5 py-1 bg-violet-950/80 text-violet-300 border border-violet-800/60 rounded-full flex items-center gap-1">
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                                    </svg>
+                                    {question.codeLanguage || 'code'}
+                                </span>
+                            )}
                         </div>
-                        <h3 className="text-lg sm:text-xl font-bold text-white mb-6 leading-relaxed">
+                        <h3 className="text-lg sm:text-xl font-bold text-white mb-4 leading-relaxed">
                             {question.question}
                         </h3>
+
+                        {/* Code Snippet Block */}
+                        {question.codeSnippet && (
+                            <div className="mb-6 rounded-2xl overflow-hidden border border-violet-800/50 shadow-[0_4px_20px_rgba(109,40,217,0.15)]">
+                                {/* Code header bar */}
+                                <div className="flex items-center justify-between px-4 py-2.5 bg-[#161b2e] border-b border-slate-800">
+                                    <div className="flex items-center gap-2">
+                                        {/* Traffic light dots */}
+                                        <span className="w-3 h-3 rounded-full bg-red-500/70"></span>
+                                        <span className="w-3 h-3 rounded-full bg-amber-400/70"></span>
+                                        <span className="w-3 h-3 rounded-full bg-emerald-500/70"></span>
+                                        <span className="ml-2 text-xs font-mono font-bold text-slate-400">
+                                            {question.codeLanguage || 'code'}
+                                        </span>
+                                    </div>
+                                    <svg className="w-4 h-4 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                                    </svg>
+                                </div>
+                                {/* Code body */}
+                                <pre className="bg-[#0d1117] px-5 py-4 overflow-x-auto text-sm leading-relaxed" style={{fontFamily:"'Fira Code','Cascadia Code','Consolas',monospace"}}>
+                                    <code className="text-green-300 whitespace-pre">{question.codeSnippet}</code>
+                                </pre>
+                            </div>
+                        )}
 
                         <div ref={optionsContainerRef} className="space-y-3">
                             {question.options.map((option, idx) => (
@@ -1556,12 +1701,8 @@ export const QuizTakeScreen = () => {
         );
     }
 
-    if (!user && !userDetails) {
-        return <Login onLogin={setUser} />;
-    }
-
-    if (user && !userDetails) {
-        return <UserDetails user={user} onComplete={setUserDetails} />;
+    if (!userDetails) {
+        return <AuthScreen onLogin={(u) => setUserDetails(u)} />;
     }
 
     if (error) {
@@ -1657,7 +1798,6 @@ export const QuizTakeScreen = () => {
 
 // Main App Component for Route: /
 export default function QuizzApp() {
-    const [user, setUser] = useState(null);
     const [userDetails, setUserDetails] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -1671,16 +1811,18 @@ export default function QuizzApp() {
                         setUserDetails({
                             ...firebaseUser,
                             fullName: userData.fullName,
-                            rollNumber: userData.rollNumber
+                            rollNumber: userData.rollNumber,
+                            phone: userData.phone
                         });
                     } else {
-                        setUser(firebaseUser);
+                        // Profile missing — force re-auth
+                        await signOut(auth);
+                        setUserDetails(null);
                     }
                 } catch (error) {
                     console.error('Error fetching user details:', error);
                 }
             } else {
-                setUser(null);
                 setUserDetails(null);
             }
             setLoading(false);
@@ -1692,7 +1834,6 @@ export default function QuizzApp() {
     const handleLogout = async () => {
         try {
             await signOut(auth);
-            setUser(null);
             setUserDetails(null);
         } catch (error) {
             console.error('Logout error:', error);
@@ -1710,12 +1851,8 @@ export default function QuizzApp() {
         );
     }
 
-    if (!user && !userDetails) {
-        return <Login onLogin={setUser} />;
-    }
-
-    if (user && !userDetails) {
-        return <UserDetails user={user} onComplete={setUserDetails} />;
+    if (!userDetails) {
+        return <AuthScreen onLogin={(u) => setUserDetails(u)} />;
     }
 
     return (

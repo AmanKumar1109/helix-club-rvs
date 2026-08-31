@@ -5,9 +5,129 @@
     <link rel="icon" type="image/png" href="/src/assets/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Helix Club Quiz • Assessment Portal</title>
+    <style>
+      /* Block Print / Print-to-PDF screenshots */
+      @media print {
+        body * { visibility: hidden !important; }
+        body::after {
+          visibility: visible !important;
+          content: "⛔ Printing is not allowed on this platform.";
+          position: fixed; top: 50%; left: 50%;
+          transform: translate(-50%, -50%);
+          font-size: 24px; color: #ff4444;
+          font-family: sans-serif; font-weight: bold;
+        }
+      }
+
+      /* Screen-share / recording warning overlay */
+      #helix-capture-warning {
+        display: none;
+        position: fixed; inset: 0; z-index: 999999;
+        background: rgba(0,0,0,0.97);
+        flex-direction: column;
+        align-items: center; justify-content: center;
+        font-family: sans-serif; color: white;
+        text-align: center; padding: 24px;
+      }
+      #helix-capture-warning.active { display: flex; }
+      #helix-capture-warning h1 { font-size: 28px; color: #ff4444; margin-bottom: 12px; }
+      #helix-capture-warning p  { font-size: 15px; color: #aaa; max-width: 400px; line-height: 1.6; }
+    </style>
   </head>
-  <body class="bg-[#0b0f17] text-slate-100 antialiased selection:bg-[#4169e2] selection:text-white min-h-screen">
+  <body class="bg-[#0b0f17] text-slate-100 antialiased min-h-screen"
+        style="user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;">
+
+    <!-- Screen capture / screen recording warning overlay -->
+    <div id="helix-capture-warning">
+      <h1>⛔ Screen Recording Detected</h1>
+      <p>Screen sharing or recording is strictly prohibited during the assessment.<br/>
+         Please stop the recording to continue your quiz.</p>
+    </div>
+
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+
+    <script>
+      // ── 1. Block right-click context menu ──────────────────────────────────
+      document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+
+      // ── 2. Block keyboard shortcuts ────────────────────────────────────────
+      document.addEventListener('keydown', function(e) {
+        const key = e.key ? e.key.toLowerCase() : '';
+        const blocked =
+          // Copy / select / view-source / save / print / cut
+          (e.ctrlKey && ['c','a','u','s','p','x'].includes(key)) ||
+          // DevTools
+          e.key === 'F12' ||
+          (e.ctrlKey && e.shiftKey && ['i','j','c','k'].includes(key)) ||
+          // Screenshot shortcuts
+          e.key === 'PrintScreen' ||
+          (e.metaKey && e.shiftKey && ['3','4','5','s'].includes(key)) || // Mac
+          (e.metaKey && e.ctrlKey  && e.shiftKey && ['3','4'].includes(key)); // Mac alternate
+        if (blocked) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          return false;
+        }
+      }, true); // capture phase so nothing else gets it
+
+      // ── 3. Block clipboard copy / cut ─────────────────────────────────────
+      document.addEventListener('copy', function(e) { e.preventDefault(); });
+      document.addEventListener('cut',  function(e) { e.preventDefault(); });
+
+      // ── 4. Detect browser-level screen sharing / recording ─────────────────
+      // When someone shares screen via browser (Zoom, Meet overlay, etc.)
+      // the Visibility API fires. We also watch MediaDevices events.
+      var captureWarning = document.getElementById('helix-capture-warning');
+
+      function showCaptureWarning() {
+        captureWarning.classList.add('active');
+        // Log to console so devs know (actual Firestore log happens in React)
+        window.__helixCaptureDetected = true;
+        document.dispatchEvent(new CustomEvent('helix:capture-detected'));
+      }
+      function hideCaptureWarning() {
+        captureWarning.classList.remove('active');
+        window.__helixCaptureDetected = false;
+      }
+
+      // Watch for getDisplayMedia being called (screen share via browser tab)
+      if (navigator.mediaDevices) {
+        var origGetDisplayMedia = navigator.mediaDevices.getDisplayMedia
+          ? navigator.mediaDevices.getDisplayMedia.bind(navigator.mediaDevices)
+          : null;
+
+        if (origGetDisplayMedia) {
+          navigator.mediaDevices.getDisplayMedia = function(constraints) {
+            showCaptureWarning();
+            return origGetDisplayMedia(constraints).then(function(stream) {
+              // If they stop sharing, hide warning
+              stream.getVideoTracks().forEach(function(track) {
+                track.addEventListener('ended', hideCaptureWarning);
+              });
+              return stream;
+            }).catch(function(err) {
+              hideCaptureWarning();
+              throw err;
+            });
+          };
+        }
+      }
+
+      // ── 5. Picture-in-Picture detection (screen recording apps use this) ──
+      document.addEventListener('enterpictureinpicture', showCaptureWarning);
+      document.addEventListener('leavepictureinpicture', hideCaptureWarning);
+
+      // ── 6. Capture Handle / Screen Capture API (Chrome 102+) ─────────────
+      if ('setCaptureHandleConfig' in navigator.mediaDevices) {
+        navigator.mediaDevices.setCaptureHandleConfig({ exposeOrigin: true });
+      }
+      if ('oncapturedmousechange' in document) {
+        document.addEventListener('capturedmousechange', function(e) {
+          if (e.surfaceId) showCaptureWarning();
+          else hideCaptureWarning();
+        });
+      }
+    </script>
   </body>
 </html>

@@ -226,6 +226,9 @@ const CreateQuizTab = ({ onQuizCreated, adminUser }) => {
     const [marksPerQuestion, setMarksPerQuestion] = useState('4');
     const [questions, setQuestions] = useState([]);
     const [currentQuestion, setCurrentQuestion] = useState('');
+    const [codeSnippet, setCodeSnippet] = useState('');
+    const [codeLanguage, setCodeLanguage] = useState('javascript');
+    const [showCodeBlock, setShowCodeBlock] = useState(false);
     const [options, setOptions] = useState(['', '', '', '']);
     const [correctAnswer, setCorrectAnswer] = useState(0);
     const [loading, setLoading] = useState(false);
@@ -241,6 +244,8 @@ const CreateQuizTab = ({ onQuizCreated, adminUser }) => {
             const updatedQuestions = [...questions];
             updatedQuestions[editingIndex] = {
                 question: currentQuestion,
+                codeSnippet: codeSnippet.trim(),
+                codeLanguage,
                 options: [...options],
                 correctAnswer
             };
@@ -249,12 +254,17 @@ const CreateQuizTab = ({ onQuizCreated, adminUser }) => {
         } else {
             setQuestions([...questions, {
                 question: currentQuestion,
+                codeSnippet: codeSnippet.trim(),
+                codeLanguage,
                 options: [...options],
                 correctAnswer
             }]);
         }
 
         setCurrentQuestion('');
+        setCodeSnippet('');
+        setCodeLanguage('javascript');
+        setShowCodeBlock(false);
         setOptions(['', '', '', '']);
         setCorrectAnswer(0);
     };
@@ -262,6 +272,9 @@ const CreateQuizTab = ({ onQuizCreated, adminUser }) => {
     const editQuestion = (index) => {
         const question = questions[index];
         setCurrentQuestion(question.question);
+        setCodeSnippet(question.codeSnippet || '');
+        setCodeLanguage(question.codeLanguage || 'javascript');
+        setShowCodeBlock(!!(question.codeSnippet));
         setOptions([...question.options]);
         setCorrectAnswer(question.correctAnswer);
         setEditingIndex(index);
@@ -270,6 +283,9 @@ const CreateQuizTab = ({ onQuizCreated, adminUser }) => {
 
     const cancelEdit = () => {
         setCurrentQuestion('');
+        setCodeSnippet('');
+        setCodeLanguage('javascript');
+        setShowCodeBlock(false);
         setOptions(['', '', '', '']);
         setCorrectAnswer(0);
         setEditingIndex(null);
@@ -403,6 +419,65 @@ const CreateQuizTab = ({ onQuizCreated, adminUser }) => {
                                 placeholder="Enter your question here..."
                                 rows="3"
                             />
+                        </div>
+
+                        {/* Code Snippet Toggle */}
+                        <div>
+                            <button
+                                type="button"
+                                onClick={() => setShowCodeBlock(!showCodeBlock)}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                                    showCodeBlock
+                                        ? 'bg-violet-900/60 border-violet-600 text-violet-300'
+                                        : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-600'
+                                }`}
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                                </svg>
+                                {showCodeBlock ? 'Remove Code Snippet' : '+ Attach Code Snippet'}
+                            </button>
+
+                            {showCodeBlock && (
+                                <div className="mt-3 bg-[#0d1117] border border-violet-800/60 rounded-xl overflow-hidden">
+                                    {/* Language selector bar */}
+                                    <div className="flex items-center justify-between px-4 py-2 bg-slate-900/80 border-b border-slate-800">
+                                        <div className="flex items-center gap-2">
+                                            <svg className="w-3.5 h-3.5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                                            </svg>
+                                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Code Snippet</span>
+                                        </div>
+                                        <select
+                                            value={codeLanguage}
+                                            onChange={(e) => setCodeLanguage(e.target.value)}
+                                            className="bg-slate-800 border border-slate-700 text-slate-200 text-xs font-mono rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer"
+                                        >
+                                            <option value="javascript">JavaScript</option>
+                                            <option value="python">Python</option>
+                                            <option value="java">Java</option>
+                                            <option value="cpp">C++</option>
+                                            <option value="c">C</option>
+                                            <option value="csharp">C#</option>
+                                            <option value="typescript">TypeScript</option>
+                                            <option value="html">HTML</option>
+                                            <option value="css">CSS</option>
+                                            <option value="sql">SQL</option>
+                                            <option value="bash">Bash / Shell</option>
+                                            <option value="plaintext">Plain Text</option>
+                                        </select>
+                                    </div>
+                                    <textarea
+                                        value={codeSnippet}
+                                        onChange={(e) => setCodeSnippet(e.target.value)}
+                                        className="w-full px-4 py-4 bg-transparent text-green-300 font-mono text-sm placeholder-slate-600 focus:outline-none resize-y"
+                                        placeholder={`// Paste your ${codeLanguage} code here...`}
+                                        rows="8"
+                                        spellCheck={false}
+                                        style={{ tabSize: 4 }}
+                                    />
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
