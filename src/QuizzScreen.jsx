@@ -1290,92 +1290,99 @@ const QuizList = ({ user, onLogout }) => {
                 />
             )}
 
-            {/* STUDENT PROFILE DETAILS FLOATING POPUP CARD */}
+            {/* STUDENT PROFILE DETAILS RESPONSIVE FLOATING POPUP CARD */}
             {showProfilePanel && (
                 <div
-                    ref={profilePanelRef}
-                    className="fixed top-16 right-3 sm:right-6 lg:right-8 z-[150] w-80 sm:w-96 bg-[#0e1524]/95 backdrop-blur-xl border border-slate-700/90 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.9)] overflow-hidden text-slate-100 animate-in fade-in slide-in-from-top-4 duration-200"
+                    onClick={() => setShowProfilePanel(false)}
+                    className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-xs flex items-center sm:items-start justify-center sm:justify-end p-4 sm:p-6 sm:pt-16 overflow-y-auto"
                 >
-                    {/* Top Banner Header */}
-                    <div className="bg-gradient-to-r from-[#4169e2]/30 via-indigo-600/30 to-purple-600/30 px-5 py-4 border-b border-slate-800 flex items-center justify-between">
-                        <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#4169e2] to-indigo-500 text-white text-lg font-black flex items-center justify-center shadow-lg shadow-blue-600/30 shrink-0 border border-blue-400/30">
-                                {user.fullName?.charAt(0)?.toUpperCase() || 'U'}
-                            </div>
-                            <div className="min-w-0">
-                                <p className="text-sm font-black text-white truncate">{user.fullName || 'Student Profile'}</p>
-                                <p className="text-[11px] text-slate-400 truncate">{user.email || 'Helix Quiz Member'}</p>
-                            </div>
-                        </div>
-                        <button
-                            onClick={() => setShowProfilePanel(false)}
-                            className="w-8 h-8 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
-                    </div>
-
-                    {/* Profile Details Rows */}
-                    <div className="p-4 sm:p-5 space-y-3 max-h-[70vh] overflow-y-auto">
-                        <div className="flex items-center gap-3 bg-slate-900/70 p-3 rounded-2xl border border-slate-800/80">
-                            <div className="w-8 h-8 rounded-xl bg-blue-950/90 border border-blue-800/60 flex items-center justify-center shrink-0">
-                                <User className="w-4 h-4 text-blue-400" />
-                            </div>
-                            <div className="min-w-0">
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Full Name</p>
-                                <p className="text-xs text-white font-bold truncate">{user.fullName || '—'}</p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-3 bg-slate-900/70 p-3 rounded-2xl border border-slate-800/80">
-                            <div className="w-8 h-8 rounded-xl bg-emerald-950/90 border border-emerald-800/60 flex items-center justify-center shrink-0">
-                                <Hash className="w-4 h-4 text-emerald-400" />
-                            </div>
-                            <div className="min-w-0">
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Roll Number</p>
-                                <p className="text-xs text-emerald-400 font-bold">{user.rollNumber || '—'}</p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-3 bg-slate-900/70 p-3 rounded-2xl border border-slate-800/80">
-                            <div className="w-8 h-8 rounded-xl bg-indigo-950/90 border border-indigo-800/60 flex items-center justify-center shrink-0">
-                                <Mail className="w-4 h-4 text-indigo-400" />
-                            </div>
-                            <div className="min-w-0 truncate">
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Email Address</p>
-                                <p className="text-xs text-white font-semibold truncate">{user.email || '—'}</p>
-                            </div>
-                        </div>
-
-                        {user.phone && (
-                            <div className="flex items-center gap-3 bg-slate-900/70 p-3 rounded-2xl border border-slate-800/80">
-                                <div className="w-8 h-8 rounded-xl bg-amber-950/90 border border-amber-800/60 flex items-center justify-center shrink-0">
-                                    <Phone className="w-4 h-4 text-amber-400" />
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-[#0e1524]/95 backdrop-blur-xl border border-slate-700/90 rounded-3xl w-full max-w-sm shadow-[0_25px_70px_rgba(0,0,0,0.9)] overflow-hidden text-slate-100 animate-in fade-in zoom-in-95 sm:slide-in-from-top-4 duration-200"
+                    >
+                        {/* Top Banner Header */}
+                        <div className="bg-gradient-to-r from-[#4169e2]/30 via-indigo-600/30 to-purple-600/30 px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+                            <div className="flex items-center gap-3 min-w-0">
+                                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#4169e2] to-indigo-500 text-white text-lg font-black flex items-center justify-center shadow-lg shadow-blue-600/30 shrink-0 border border-blue-400/30">
+                                    {(user?.fullName || user?.email || 'U').charAt(0).toUpperCase()}
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Phone</p>
-                                    <p className="text-xs text-white font-semibold">{user.phone}</p>
+                                    <p className="text-sm font-black text-white truncate">{user?.fullName || 'Student Profile'}</p>
+                                    <p className="text-[11px] text-slate-400 truncate">{user?.email || 'Helix Quiz Member'}</p>
                                 </div>
                             </div>
-                        )}
-
-                        <div className="flex items-center gap-3 bg-slate-900/70 p-3 rounded-2xl border border-slate-800/80">
-                            <div className="w-8 h-8 rounded-xl bg-purple-950/90 border border-purple-800/60 flex items-center justify-center shrink-0">
-                                <Trophy className="w-4 h-4 text-purple-400" />
-                            </div>
-                            <div className="min-w-0">
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Quizzes Completed</p>
-                                <p className="text-xs text-purple-300 font-bold">{completedCount} <span className="text-slate-400 font-normal">/ {visibleQuizzes.length} Total</span></p>
-                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setShowProfilePanel(false)}
+                                className="w-8 h-8 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
                         </div>
 
-                        <button
-                            onClick={() => { setShowProfilePanel(false); onLogout(); }}
-                            className="w-full mt-2 py-2.5 bg-red-950/80 hover:bg-red-900/90 border border-red-800/80 text-red-300 hover:text-white rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
-                        >
-                            <LogOut className="w-4 h-4" />
-                            <span>Sign Out Account</span>
-                        </button>
+                        {/* Profile Details Rows */}
+                        <div className="p-4 sm:p-5 space-y-3 max-h-[70vh] overflow-y-auto">
+                            <div className="flex items-center gap-3 bg-slate-900/70 p-3 rounded-2xl border border-slate-800/80">
+                                <div className="w-8 h-8 rounded-xl bg-blue-950/90 border border-blue-800/60 flex items-center justify-center shrink-0">
+                                    <User className="w-4 h-4 text-blue-400" />
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Full Name</p>
+                                    <p className="text-xs text-white font-bold truncate">{user?.fullName || '—'}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 bg-slate-900/70 p-3 rounded-2xl border border-slate-800/80">
+                                <div className="w-8 h-8 rounded-xl bg-emerald-950/90 border border-emerald-800/60 flex items-center justify-center shrink-0">
+                                    <Hash className="w-4 h-4 text-emerald-400" />
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Roll Number</p>
+                                    <p className="text-xs text-emerald-400 font-bold">{user?.rollNumber || '—'}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 bg-slate-900/70 p-3 rounded-2xl border border-slate-800/80">
+                                <div className="w-8 h-8 rounded-xl bg-indigo-950/90 border border-indigo-800/60 flex items-center justify-center shrink-0">
+                                    <Mail className="w-4 h-4 text-indigo-400" />
+                                </div>
+                                <div className="min-w-0 truncate">
+                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Email Address</p>
+                                    <p className="text-xs text-white font-semibold truncate">{user?.email || '—'}</p>
+                                </div>
+                            </div>
+
+                            {user?.phone && (
+                                <div className="flex items-center gap-3 bg-slate-900/70 p-3 rounded-2xl border border-slate-800/80">
+                                    <div className="w-8 h-8 rounded-xl bg-amber-950/90 border border-amber-800/60 flex items-center justify-center shrink-0">
+                                        <Phone className="w-4 h-4 text-amber-400" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Phone</p>
+                                        <p className="text-xs text-white font-semibold">{user.phone}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="flex items-center gap-3 bg-slate-900/70 p-3 rounded-2xl border border-slate-800/80">
+                                <div className="w-8 h-8 rounded-xl bg-purple-950/90 border border-purple-800/60 flex items-center justify-center shrink-0">
+                                    <Trophy className="w-4 h-4 text-purple-400" />
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Quizzes Completed</p>
+                                    <p className="text-xs text-purple-300 font-bold">{completedCount} <span className="text-slate-400 font-normal">/ {visibleQuizzes.length} Total</span></p>
+                                </div>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => { setShowProfilePanel(false); onLogout(); }}
+                                className="w-full mt-2 py-2.5 bg-red-950/80 hover:bg-red-900/90 border border-red-800/80 text-red-300 hover:text-white rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                            >
+                                <LogOut className="w-4 h-4" />
+                                <span>Sign Out Account</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
