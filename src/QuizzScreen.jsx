@@ -642,8 +642,10 @@ const QuizList = ({ user, onLogout }) => {
         { bg: 'bg-[#141d38]/90', border: 'border-slate-800', badge: 'bg-blue-950/80 text-blue-300 border border-blue-800/40', tag: 'bg-slate-900/90 text-blue-300 border border-slate-700/60', dot: 'bg-[#4169e2]', glowColor: 'rgba(65,105,226,0.35)' }
     ];
 
-    // Filter & Sort Logic
-    const filteredQuizzes = quizzes
+    // Filter & Sort Logic (exclude hidden/archived quizzes for students)
+    const visibleQuizzes = quizzes.filter(quiz => quiz.status !== 'hidden' && quiz.status !== 'archived');
+
+    const filteredQuizzes = visibleQuizzes
         .filter(quiz => {
             const matchesSearch = quiz.name?.toLowerCase().includes(searchQuery.toLowerCase());
             const isSubmitted = !!submissions[quiz.id];
@@ -663,8 +665,8 @@ const QuizList = ({ user, onLogout }) => {
             return 0; // default latest order
         });
 
-    const completedCount = Object.keys(submissions).length;
-    const availableCount = Math.max(0, quizzes.length - completedCount);
+    const completedCount = Object.keys(submissions).filter(qId => visibleQuizzes.some(q => q.id === qId)).length;
+    const availableCount = Math.max(0, visibleQuizzes.length - completedCount);
 
     return (
         <div className="min-h-screen bg-[#0b0f17] flex flex-col justify-between font-sans w-full relative overflow-hidden text-slate-100">
@@ -743,7 +745,7 @@ const QuizList = ({ user, onLogout }) => {
                                 onClick={() => setStatusFilter('all')}
                                 className={`px-4 py-1.5 rounded-xl transition-all cursor-pointer ${statusFilter === 'all' ? 'bg-[#4169e2] text-white shadow-md shadow-blue-600/30' : 'text-slate-400 hover:text-white'}`}
                             >
-                                All Quizzes ({quizzes.length})
+                                All Quizzes ({visibleQuizzes.length})
                             </button>
                             <button
                                 onClick={() => setStatusFilter('available')}
@@ -1782,7 +1784,12 @@ export const QuizTakeScreen = () => {
                 setLoading(true);
                 const quizDoc = await getDoc(doc(db, 'quizzes', quizId));
                 if (quizDoc.exists()) {
-                    setQuiz({ id: quizDoc.id, ...quizDoc.data() });
+                    const qData = quizDoc.data();
+                    if (qData.status === 'hidden' || qData.status === 'archived') {
+                        setError('This quiz is currently hidden by the administrator.');
+                    } else {
+                        setQuiz({ id: quizDoc.id, ...qData });
+                    }
                 } else {
                     setError('Quiz not found or it may have been removed.');
                 }
