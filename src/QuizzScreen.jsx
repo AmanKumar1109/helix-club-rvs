@@ -458,6 +458,8 @@ const QuizList = ({ user, onLogout }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'available', 'completed'
     const [sortBy, setSortBy] = useState('latest'); // 'latest', 'marks', 'duration'
+    const [showProfilePanel, setShowProfilePanel] = useState(false);
+    const profilePanelRef = useRef(null);
     
     // GSAP Animation References
     const headerRef = useRef(null);
@@ -469,6 +471,23 @@ const QuizList = ({ user, onLogout }) => {
     useEffect(() => {
         loadQuizzesAndSubmissions();
     }, [user]);
+
+    // Close profile panel on outside click
+    useEffect(() => {
+        if (!showProfilePanel) return;
+        const handleClick = (e) => {
+            if (profilePanelRef.current && !profilePanelRef.current.contains(e.target)) {
+                setShowProfilePanel(false);
+            }
+        };
+        const handleKey = (e) => { if (e.key === 'Escape') setShowProfilePanel(false); };
+        document.addEventListener('mousedown', handleClick);
+        document.addEventListener('keydown', handleKey);
+        return () => {
+            document.removeEventListener('mousedown', handleClick);
+            document.removeEventListener('keydown', handleKey);
+        };
+    }, [showProfilePanel]);
 
     // Initial Screen Load GSAP Animations (Header, Sidebar, Ambient floating elements)
     useEffect(() => {
@@ -680,9 +699,9 @@ const QuizList = ({ user, onLogout }) => {
             {/* Full-width Main Wrapper */}
             <div className="w-full flex-1 relative z-10">
                 {/* 1. Modern Dark Glassmorphic Navbar */}
-                <header ref={headerRef} className="bg-[#0f172a]/90 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-30 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+                <header ref={headerRef} className="bg-[#0f172a]/95 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-40 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
                     {/* Top Row: Brand & Navigation */}
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4 relative z-30">
                         {/* Logo & Portal Name */}
                         <div className="flex items-center gap-3">
                             <img
@@ -742,15 +761,115 @@ const QuizList = ({ user, onLogout }) => {
 
                         {/* Right: User Profile & Logout */}
                         <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2.5 bg-slate-900/90 px-3 py-1.5 rounded-2xl border border-slate-800 shadow-2xs">
-                                <div className="w-7 h-7 rounded-full bg-[#4169e2] text-white font-bold text-xs flex items-center justify-center shadow-xs">
-                                    {user.fullName?.charAt(0)?.toUpperCase() || 'U'}
-                                </div>
-                                <div className="text-left hidden sm:block">
-                                    <p className="text-xs font-bold text-white leading-tight">{user.fullName}</p>
-                                    <p className="text-[10px] font-semibold text-slate-400 leading-tight">{user.rollNumber}</p>
-                                </div>
+                            {/* Avatar — clickable to open profile panel */}
+                            <div className="relative z-50" ref={profilePanelRef}>
+                                <button
+                                    onClick={() => setShowProfilePanel(p => !p)}
+                                    className="flex items-center gap-2.5 bg-slate-900/90 px-3 py-1.5 rounded-2xl border border-slate-800 shadow-2xs hover:border-slate-700 hover:bg-slate-800/80 transition-all cursor-pointer"
+                                    title="View Profile"
+                                >
+                                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#4169e2] to-indigo-500 text-white font-bold text-xs flex items-center justify-center shadow-xs">
+                                        {user.fullName?.charAt(0)?.toUpperCase() || 'U'}
+                                    </div>
+                                    <div className="text-left hidden sm:block">
+                                        <p className="text-xs font-bold text-white leading-tight">{user.fullName}</p>
+                                        <p className="text-[10px] font-semibold text-slate-400 leading-tight">{user.rollNumber}</p>
+                                    </div>
+                                    <svg className={`w-3 h-3 text-slate-400 transition-transform hidden sm:block ${showProfilePanel ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+
+                                {/* Profile Dropdown Panel */}
+                                {showProfilePanel && (
+                                    <div className="absolute right-0 top-full mt-2 w-72 bg-[#0e1524] border border-slate-700/90 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.85)] z-[100] overflow-hidden">
+                                        {/* Top banner */}
+                                        <div className="bg-gradient-to-r from-[#4169e2]/20 to-indigo-600/20 px-5 py-4 border-b border-slate-800">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#4169e2] to-indigo-500 text-white text-lg font-black flex items-center justify-center shadow-lg shadow-blue-600/30 shrink-0">
+                                                    {user.fullName?.charAt(0)?.toUpperCase() || 'U'}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-black text-white truncate">{user.fullName}</p>
+                                                    <p className="text-[11px] text-slate-400 truncate">{user.email}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Details rows */}
+                                        <div className="px-5 py-4 space-y-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-7 h-7 rounded-lg bg-blue-950/80 border border-blue-800/60 flex items-center justify-center shrink-0">
+                                                    <User className="w-3.5 h-3.5 text-blue-400" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Full Name</p>
+                                                    <p className="text-xs text-white font-semibold truncate">{user.fullName || '—'}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-7 h-7 rounded-lg bg-indigo-950/80 border border-indigo-800/60 flex items-center justify-center shrink-0">
+                                                    <svg className="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                                    </svg>
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Email</p>
+                                                    <p className="text-xs text-white font-semibold truncate">{user.email || '—'}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-7 h-7 rounded-lg bg-emerald-950/80 border border-emerald-800/60 flex items-center justify-center shrink-0">
+                                                    <Hash className="w-3.5 h-3.5 text-emerald-400" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Roll Number</p>
+                                                    <p className="text-xs text-white font-semibold">{user.rollNumber || '—'}</p>
+                                                </div>
+                                            </div>
+
+                                            {user.phone && (
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-7 h-7 rounded-lg bg-amber-950/80 border border-amber-800/60 flex items-center justify-center shrink-0">
+                                                        <svg className="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Phone</p>
+                                                        <p className="text-xs text-white font-semibold">{user.phone}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0">
+                                                    <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Quizzes Completed</p>
+                                                    <p className="text-xs text-white font-semibold">{completedCount} / {quizzes.length}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Logout button */}
+                                        <div className="px-5 pb-4">
+                                            <button
+                                                onClick={() => { setShowProfilePanel(false); onLogout(); }}
+                                                className="w-full flex items-center justify-center gap-2 py-2.5 bg-red-950/60 hover:bg-red-900/70 border border-red-800/60 text-red-400 hover:text-red-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                            >
+                                                <LogOut className="w-3.5 h-3.5" />
+                                                Sign Out
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
+
+                            {/* Standalone logout button (small) */}
                             <button
                                 onClick={onLogout}
                                 className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
