@@ -1192,9 +1192,179 @@ const ActivityLogsTab = ({ logs }) => {
     );
 };
 
+// Modal for inspecting a specific student's detailed quiz answer sheet
+const StudentAnswerSheetModal = ({ submission, quiz, onClose }) => {
+    const modalRef = useRef(null);
+
+    useEffect(() => {
+        if (modalRef.current) {
+            gsap.fromTo(modalRef.current,
+                { opacity: 0, scale: 0.95, y: 20 },
+                { opacity: 1, scale: 1, y: 0, duration: 0.3, ease: 'power2.out' }
+            );
+        }
+    }, []);
+
+    const marksPerQ = quiz.marksPerQuestion || submission.marksPerQuestion || 4;
+    const totalPossible = (quiz.questions?.length || submission.totalQuestions || 0) * marksPerQ;
+    const pct = totalPossible > 0 ? Math.round((submission.score / totalPossible) * 100) : 0;
+    const timeMins = Math.floor((submission.timeTaken || 0) / 60);
+    const timeSecs = (submission.timeTaken || 0) % 60;
+
+    return (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-xl z-[120] flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+            <div
+                ref={modalRef}
+                className="bg-[#0f172a] border border-slate-700/80 rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-[0_25px_80px_rgba(0,0,0,0.9)] overflow-hidden text-slate-100"
+            >
+                {/* Header */}
+                <div className="p-5 sm:p-6 border-b border-slate-800 bg-[#131b2e]/90 flex items-start justify-between gap-4 shrink-0">
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <span className="px-2.5 py-0.5 bg-indigo-950 text-indigo-300 border border-indigo-800 rounded-full text-[10px] font-extrabold uppercase tracking-wider">
+                                Student Answer Sheet Inspection
+                            </span>
+                            <span className="px-2.5 py-0.5 bg-slate-900 text-slate-300 border border-slate-700 rounded-full text-[10px] font-mono">
+                                Roll: {submission.rollNumber}
+                            </span>
+                        </div>
+                        <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                            {submission.userName}
+                        </h2>
+                        <p className="text-xs text-slate-400 font-medium">
+                            Assessment: <strong className="text-slate-200">{quiz.name}</strong> • Submitted: {submission.submittedAt?.toDate ? submission.submittedAt.toDate().toLocaleString() : 'Recent'}
+                        </p>
+                    </div>
+
+                    <button
+                        onClick={onClose}
+                        className="w-9 h-9 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shrink-0"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+
+                {/* Score Summary Metrics */}
+                <div className="p-5 bg-slate-900/60 border-b border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-3 shrink-0">
+                    <div className="bg-[#131b2e]/90 p-3 rounded-xl border border-slate-800">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Score Obtained</p>
+                        <p className="text-xl font-black text-emerald-400">{submission.score} <span className="text-xs text-slate-400">/ {totalPossible}</span></p>
+                    </div>
+                    <div className="bg-[#131b2e]/90 p-3 rounded-xl border border-slate-800">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Accuracy Percentage</p>
+                        <p className="text-xl font-black text-blue-400">{pct}%</p>
+                    </div>
+                    <div className="bg-[#131b2e]/90 p-3 rounded-xl border border-slate-800">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Correct / Wrong</p>
+                        <p className="text-sm font-bold text-white mt-1">
+                            <span className="text-emerald-400">✓ {submission.correct || 0}</span> • <span className="text-red-400">✗ {submission.wrong || 0}</span> • <span className="text-slate-400">⚪ {submission.notAttempted || 0}</span>
+                        </p>
+                    </div>
+                    <div className="bg-[#131b2e]/90 p-3 rounded-xl border border-slate-800">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Time Taken</p>
+                        <p className="text-base font-bold text-amber-400 mt-1">{timeMins}m {timeSecs}s</p>
+                    </div>
+                </div>
+
+                {/* Question-wise Answer Sheet Details */}
+                <div className="p-6 overflow-y-auto space-y-4 flex-1 bg-[#0b0f17]/95">
+                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        Question-by-Question Response Audit ({quiz.questions?.length || 0} Questions)
+                    </h3>
+
+                    <div className="space-y-4">
+                        {quiz.questions?.map((q, qIdx) => {
+                            const studentAnsIdx = submission.answers ? submission.answers[qIdx] : undefined;
+                            const isUnattempted = studentAnsIdx === undefined || studentAnsIdx === null;
+                            const isCorrect = !isUnattempted && studentAnsIdx === q.correctAnswer;
+
+                            return (
+                                <div
+                                    key={qIdx}
+                                    className={`p-4 rounded-2xl border ${
+                                        isCorrect
+                                            ? 'bg-[#131b2e]/90 border-emerald-900/60'
+                                            : isUnattempted
+                                            ? 'bg-[#131b2e]/70 border-slate-800'
+                                            : 'bg-[#131b2e]/90 border-red-900/60'
+                                    }`}
+                                >
+                                    <div className="flex items-center justify-between gap-3 mb-2">
+                                        <div className="flex items-center gap-2">
+                                            <span className="px-2.5 py-0.5 bg-slate-900 text-blue-400 font-mono text-xs font-bold rounded-lg border border-slate-800">
+                                                Q{qIdx + 1}
+                                            </span>
+                                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                                                isCorrect
+                                                    ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                                                    : isUnattempted
+                                                    ? 'bg-slate-900 text-slate-400 border-slate-700'
+                                                    : 'bg-red-950 text-red-300 border-red-800'
+                                            }`}>
+                                                {isCorrect ? `✅ Correct (+${marksPerQ} pts)` : isUnattempted ? '⚪ Unattempted (0 pts)' : '❌ Wrong (0 pts)'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <h4 className="text-sm font-bold text-white mb-3 leading-relaxed">
+                                        {q.question}
+                                    </h4>
+
+                                    {q.codeSnippet && (
+                                        <pre className="mb-4 p-3 bg-[#0d1117] rounded-xl text-xs font-mono text-emerald-300 overflow-x-auto border border-slate-800">
+                                            <code>{q.codeSnippet}</code>
+                                        </pre>
+                                    )}
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                        {q.options?.map((opt, optIdx) => {
+                                            const isSelectedByStudent = studentAnsIdx === optIdx;
+                                            const isOptionCorrect = optIdx === q.correctAnswer;
+
+                                            let style = 'bg-slate-900/80 border-slate-800 text-slate-400';
+                                            if (isOptionCorrect) {
+                                                style = 'bg-emerald-950/90 border-emerald-700 text-emerald-300 font-bold';
+                                            } else if (isSelectedByStudent && !isOptionCorrect) {
+                                                style = 'bg-red-950/90 border-red-700 text-red-300 font-bold';
+                                            }
+
+                                            return (
+                                                <div key={optIdx} className={`p-3 rounded-xl border flex items-center justify-between gap-2 ${style}`}>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-bold">{String.fromCharCode(65 + optIdx)}.</span>
+                                                        <span>{opt}</span>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-1 shrink-0">
+                                                        {isSelectedByStudent && (
+                                                            <span className="text-[10px] bg-blue-900 text-blue-300 px-2 py-0.5 rounded font-bold">
+                                                                Student Choice
+                                                            </span>
+                                                        )}
+                                                        {isOptionCorrect && (
+                                                            <span className="text-[10px] bg-emerald-900 text-emerald-300 px-2 py-0.5 rounded font-bold">
+                                                                Correct Key
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // Quiz Analytics & Integrity Inspection Modal (Dark Theme with GSAP animations & CSS charts)
 const QuizAnalyticsModal = ({ quiz, submissions, activityLogs, onClose, onRefresh }) => {
     const [modalTab, setModalTab] = useState('overview'); // 'overview' | 'leaderboard' | 'cheats' | 'questions'
+    const [selectedStudentSub, setSelectedStudentSub] = useState(null);
     const modalRef = useRef(null);
 
     useEffect(() => {
@@ -1269,6 +1439,7 @@ const QuizAnalyticsModal = ({ quiz, submissions, activityLogs, onClose, onRefres
 
     const maxBucketCount = Math.max(...buckets.map(b => b.count), 1);
     const isPublic = quiz.isLeaderboardPublic === true || quiz.leaderboardPublic === true;
+    const isAnswerKeyPublic = quiz.isAnswerKeyPublic === true || quiz.answerKeyPublic === true;
 
     // Reset handler for a specific student attempt inside the modal
     const handleResetStudent = async (sub) => {
@@ -1306,6 +1477,19 @@ const QuizAnalyticsModal = ({ quiz, submissions, activityLogs, onClose, onRefres
         }
     };
 
+    const handleToggleAnswerKeyPublic = async () => {
+        const newStatus = !isAnswerKeyPublic;
+        try {
+            await updateDoc(doc(db, 'quizzes', quiz.id), {
+                isAnswerKeyPublic: newStatus
+            });
+            alert(`🔑 Answer Key & Solutions for "${quiz.name}" is now ${newStatus ? 'RELEASED / PUBLIC to students' : 'HIDDEN / PRIVATE'}`);
+            if (onRefresh) onRefresh();
+        } catch (err) {
+            alert('Failed to update Answer Key release status: ' + (err.message || err));
+        }
+    };
+
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-lg z-[100] flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
             <div
@@ -1334,7 +1518,17 @@ const QuizAnalyticsModal = ({ quiz, submissions, activityLogs, onClose, onRefres
                                 }`}
                                 title="Click to toggle public leaderboard visibility for students"
                             >
-                                {isPublic ? '🏆 Leaderboard: Public (Click to hide)' : '🔒 Leaderboard: Private (Click to publish)'}
+                                {isPublic ? '🏆 Leaderboard: Public' : '🔒 Leaderboard: Private'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleToggleAnswerKeyPublic}
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold border cursor-pointer hover:scale-105 transition-transform ${
+                                    isAnswerKeyPublic ? 'bg-purple-950 text-purple-300 border-purple-800' : 'bg-slate-900 text-slate-400 border-slate-700'
+                                }`}
+                                title="Click to toggle official answer key release for students"
+                            >
+                                {isAnswerKeyPublic ? '🔑 Answer Key: Released' : '🔒 Answer Key: Hidden'}
                             </button>
                         </div>
                         <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-snug">
@@ -1378,7 +1572,7 @@ const QuizAnalyticsModal = ({ quiz, submissions, activityLogs, onClose, onRefres
                         }`}
                     >
                         <Trophy className="w-4 h-4 text-amber-400" />
-                        Leaderboard ({totalAttempts})
+                        Leaderboard & Answer Sheets ({totalAttempts})
                     </button>
                     <button
                         onClick={() => setModalTab('cheats')}
@@ -1400,7 +1594,7 @@ const QuizAnalyticsModal = ({ quiz, submissions, activityLogs, onClose, onRefres
                         }`}
                     >
                         <FileText className="w-4 h-4 text-indigo-400" />
-                        Questions Preview ({quiz.questions?.length || 0})
+                        Testbook Answer Key & Question Insights
                     </button>
                 </div>
 
@@ -1532,7 +1726,7 @@ const QuizAnalyticsModal = ({ quiz, submissions, activityLogs, onClose, onRefres
                             <div className="flex items-center justify-between">
                                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
                                     <Trophy className="w-4 h-4 text-amber-400" />
-                                    Quiz Rankings & Attempts ({leaderboard.length})
+                                    Quiz Rankings & Student Answer Sheets ({leaderboard.length})
                                 </h3>
                             </div>
 
@@ -1552,7 +1746,7 @@ const QuizAnalyticsModal = ({ quiz, submissions, activityLogs, onClose, onRefres
                                                     <th className="py-3 px-4">Score</th>
                                                     <th className="py-3 px-4">Accuracy</th>
                                                     <th className="py-3 px-4">Time Taken</th>
-                                                    <th className="py-3 px-4 text-right">Action</th>
+                                                    <th className="py-3 px-4 text-right">Actions</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-800/60 font-medium">
@@ -1571,13 +1765,25 @@ const QuizAnalyticsModal = ({ quiz, submissions, activityLogs, onClose, onRefres
                                                             <td className="py-3.5 px-4 font-bold text-blue-400">{pct}%</td>
                                                             <td className="py-3.5 px-4 font-mono text-slate-400">{m}m {s}s</td>
                                                             <td className="py-3.5 px-4 text-right">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => handleResetStudent(sub)}
-                                                                    className="px-3 py-1.5 bg-red-950/80 hover:bg-red-900 border border-red-800/80 text-red-300 hover:text-white rounded-lg text-xs font-bold transition-all cursor-pointer"
-                                                                >
-                                                                    Reset & Reattempt
-                                                                </button>
+                                                                <div className="flex items-center justify-end gap-1.5">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setSelectedStudentSub(sub)}
+                                                                        className="px-3 py-1.5 bg-blue-950/80 hover:bg-blue-900 border border-blue-800/80 text-blue-300 hover:text-white rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
+                                                                        title="Inspect student answer sheet"
+                                                                    >
+                                                                        <Eye className="w-3.5 h-3.5 text-blue-400" />
+                                                                        <span>Answer Sheet</span>
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleResetStudent(sub)}
+                                                                        className="px-3 py-1.5 bg-red-950/80 hover:bg-red-900 border border-red-800/80 text-red-300 hover:text-white rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
+                                                                    >
+                                                                        <RotateCcw className="w-3.5 h-3.5" />
+                                                                        <span>Reset</span>
+                                                                    </button>
+                                                                </div>
                                                             </td>
                                                         </tr>
                                                     );
@@ -1629,46 +1835,153 @@ const QuizAnalyticsModal = ({ quiz, submissions, activityLogs, onClose, onRefres
                     )}
 
                     {modalTab === 'questions' && (
-                        <div className="space-y-4">
-                            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                                <FileText className="w-4 h-4 text-indigo-400" />
-                                Quiz Question Paper ({quiz.questions?.length || 0} Questions)
-                            </h3>
-                            <div className="space-y-3">
-                                {quiz.questions?.map((q, idx) => (
-                                    <div key={idx} className="p-4 bg-[#131b2e]/90 border border-slate-800 rounded-xl space-y-3">
-                                        <p className="text-xs font-bold text-white flex items-center gap-2">
-                                            <span className="px-2 py-0.5 bg-slate-800 text-blue-400 rounded-md font-mono">Q{idx + 1}</span>
-                                            {q.question}
-                                        </p>
-                                        {q.codeSnippet && (
-                                            <pre className="p-3 bg-slate-950 rounded-lg text-xs font-mono text-emerald-400 overflow-x-auto border border-slate-800">
-                                                <code>{q.codeSnippet}</code>
-                                            </pre>
-                                        )}
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                                            {q.options?.map((opt, oIdx) => (
-                                                <div
-                                                    key={oIdx}
-                                                    className={`p-2.5 rounded-lg border flex items-center gap-2 ${
-                                                        oIdx === q.correctAnswer
-                                                            ? 'bg-emerald-950/80 border-emerald-700 text-emerald-300 font-bold'
-                                                            : 'bg-slate-900/80 border-slate-800 text-slate-400'
-                                                    }`}
-                                                >
-                                                    <span className="font-bold">{String.fromCharCode(65 + oIdx)}.</span>
-                                                    <span>{opt}</span>
-                                                    {oIdx === q.correctAnswer && <span className="ml-auto text-[10px] bg-emerald-900 text-emerald-300 px-1.5 py-0.5 rounded">Correct</span>}
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                                <div>
+                                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                                        <FileText className="w-4 h-4 text-indigo-400" />
+                                        Testbook Answer Key & Question Insights ({quiz.questions?.length || 0} Questions)
+                                    </h3>
+                                    <p className="text-xs text-slate-400 mt-0.5">
+                                        Inspect question accuracy, difficulty rating, and student option distribution breakdown.
+                                    </p>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={handleToggleAnswerKeyPublic}
+                                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                                        isAnswerKeyPublic
+                                            ? 'bg-emerald-950 text-emerald-300 border-emerald-800 shadow-sm'
+                                            : 'bg-slate-900 text-slate-400 border-slate-700 hover:text-white'
+                                    }`}
+                                >
+                                    {isAnswerKeyPublic ? '🔑 Answer Key: Released to Students' : '🔒 Answer Key: Hidden from Students (Click to release)'}
+                                </button>
+                            </div>
+
+                            <div className="space-y-4">
+                                {quiz.questions?.map((q, qIdx) => {
+                                    // Compute option selection counts for this question
+                                    const optCounts = [0, 0, 0, 0];
+                                    let unattemptedCount = 0;
+
+                                    validQuizSubmissions.forEach(sub => {
+                                        const ans = sub.answers ? sub.answers[qIdx] : undefined;
+                                        if (ans === undefined || ans === null) {
+                                            unattemptedCount++;
+                                        } else if (ans >= 0 && ans < 4) {
+                                            optCounts[ans]++;
+                                        }
+                                    });
+
+                                    const correctCount = optCounts[q.correctAnswer] || 0;
+                                    const accuracyPct = totalAttempts > 0 ? Math.round((correctCount / totalAttempts) * 100) : 0;
+                                    const difficultyLabel = accuracyPct >= 80 ? '🟢 Easy' : accuracyPct >= 50 ? '🟡 Medium' : '🔴 Hard';
+
+                                    return (
+                                        <div key={qIdx} className="p-5 bg-[#131b2e]/90 border border-slate-800 rounded-2xl space-y-4 shadow-sm">
+                                            {/* Question Header Bar */}
+                                            <div className="flex items-center justify-between gap-3 flex-wrap border-b border-slate-800 pb-3">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="px-2.5 py-1 bg-slate-900 text-blue-400 rounded-lg font-mono text-xs font-bold border border-slate-800">
+                                                        Q{qIdx + 1}
+                                                    </span>
+                                                    <span className="text-xs font-mono text-slate-400">+{marksPerQ} Marks</span>
                                                 </div>
-                                            ))}
+
+                                                <div className="flex items-center gap-2">
+                                                    <span className="px-2.5 py-1 bg-slate-900 text-slate-300 rounded-lg text-xs font-semibold border border-slate-800 flex items-center gap-1.5">
+                                                        <Target className="w-3.5 h-3.5 text-emerald-400" />
+                                                        Accuracy: <strong className="text-emerald-400">{accuracyPct}%</strong> ({correctCount}/{totalAttempts} students)
+                                                    </span>
+                                                    <span className="px-2.5 py-1 bg-slate-900 rounded-lg text-xs font-semibold border border-slate-800">
+                                                        {difficultyLabel}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Question text & Code Snippet */}
+                                            <h4 className="text-sm font-bold text-white leading-relaxed">
+                                                {q.question}
+                                            </h4>
+
+                                            {q.codeSnippet && (
+                                                <pre className="p-3 bg-[#0d1117] rounded-xl text-xs font-mono text-emerald-300 overflow-x-auto border border-slate-800">
+                                                    <code>{q.codeSnippet}</code>
+                                                </pre>
+                                            )}
+
+                                            {/* Option Selection Distribution (Testbook Style) */}
+                                            <div className="space-y-2 pt-1">
+                                                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                                                    Student Option Selection Distribution:
+                                                </p>
+
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                                    {q.options?.map((optText, oIdx) => {
+                                                        const optStudents = optCounts[oIdx];
+                                                        const optPct = totalAttempts > 0 ? Math.round((optStudents / totalAttempts) * 100) : 0;
+                                                        const isCorrect = oIdx === q.correctAnswer;
+
+                                                        return (
+                                                            <div
+                                                                key={oIdx}
+                                                                className={`p-3 rounded-xl border space-y-1.5 transition-all ${
+                                                                    isCorrect
+                                                                        ? 'bg-emerald-950/80 border-emerald-700/90 shadow-sm'
+                                                                        : 'bg-slate-900/80 border-slate-800'
+                                                                }`}
+                                                            >
+                                                                <div className="flex items-center justify-between text-xs gap-2">
+                                                                    <span className={`font-semibold flex items-center gap-1.5 ${isCorrect ? 'text-emerald-300 font-bold' : 'text-slate-300'}`}>
+                                                                        <span>{String.fromCharCode(65 + oIdx)}.</span>
+                                                                        <span>{optText}</span>
+                                                                    </span>
+
+                                                                    {isCorrect && (
+                                                                        <span className="text-[10px] bg-emerald-900 text-emerald-300 px-2 py-0.5 rounded-full font-extrabold uppercase shrink-0">
+                                                                            ✓ Correct Key
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Percentage bar */}
+                                                                <div className="space-y-1">
+                                                                    <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                                                                        <div
+                                                                            className={`h-full rounded-full transition-all ${
+                                                                                isCorrect ? 'bg-emerald-400' : 'bg-slate-600'
+                                                                            }`}
+                                                                            style={{ width: `${optPct}%` }}
+                                                                        ></div>
+                                                                    </div>
+                                                                    <div className="flex justify-end text-[10px] font-mono text-slate-400">
+                                                                        <span>{optPct}% ({optStudents} students)</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
                 </div>
             </div>
+
+            {/* Student Answer Sheet Inspection Modal */}
+            {selectedStudentSub && (
+                <StudentAnswerSheetModal
+                    submission={selectedStudentSub}
+                    quiz={quiz}
+                    onClose={() => setSelectedStudentSub(null)}
+                />
+            )}
         </div>
     );
 };
@@ -1819,6 +2132,21 @@ const ManageQuizzesTab = ({ quizzes, submissions, activityLogs, onRefresh, admin
         } catch (err) {
             console.error("Error toggling leaderboard visibility:", err);
             alert("Failed to update leaderboard visibility: " + (err.message || err));
+        }
+    };
+
+    const handleToggleAnswerKeyPublic = async (quiz) => {
+        const currentIsPublic = quiz.isAnswerKeyPublic === true || quiz.answerKeyPublic === true;
+        const newStatus = !currentIsPublic;
+        try {
+            await updateDoc(doc(db, 'quizzes', quiz.id), {
+                isAnswerKeyPublic: newStatus
+            });
+            alert(`🔑 Answer Key & Solutions for "${quiz.name}" is now ${newStatus ? 'RELEASED / PUBLIC to students' : 'HIDDEN / PRIVATE'}!`);
+            onRefresh();
+        } catch (err) {
+            console.error("Error toggling answer key release status:", err);
+            alert("Failed to update answer key release status: " + (err.message || err));
         }
     };
 
@@ -2059,6 +2387,16 @@ const ManageQuizzesTab = ({ quizzes, submissions, activityLogs, onRefresh, admin
                                                     <Lock className="w-3 h-3 text-slate-500" /> Leaderboard: Private
                                                 </span>
                                             )}
+
+                                            {(quiz.isAnswerKeyPublic || quiz.answerKeyPublic) ? (
+                                                <span className="px-2.5 py-0.5 bg-purple-950/80 text-purple-300 border border-purple-800/80 rounded-full text-xs font-bold flex items-center gap-1">
+                                                    <FileText className="w-3 h-3 text-purple-300" /> Answer Key: Released
+                                                </span>
+                                            ) : (
+                                                <span className="px-2.5 py-0.5 bg-slate-900/90 text-slate-400 border border-slate-700/80 rounded-full text-xs font-bold flex items-center gap-1">
+                                                    <Lock className="w-3 h-3 text-slate-500" /> Answer Key: Hidden
+                                                </span>
+                                            )}
                                         </div>
 
                                         {/* Badges Bar */}
@@ -2114,6 +2452,21 @@ const ManageQuizzesTab = ({ quizzes, submissions, activityLogs, onRefresh, admin
                                         >
                                             <Trophy className={`w-4 h-4 ${(quiz.isLeaderboardPublic || quiz.leaderboardPublic) ? 'text-amber-400' : 'text-slate-500'}`} />
                                             {(quiz.isLeaderboardPublic || quiz.leaderboardPublic) ? 'Leaderboard: Public' : 'Leaderboard: Private'}
+                                        </button>
+
+                                        {/* Answer Key Release / Hide Toggle Button */}
+                                        <button
+                                            type="button"
+                                            onClick={() => handleToggleAnswerKeyPublic(quiz)}
+                                            className={`px-3 py-2 bg-slate-900 hover:bg-slate-800 border rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                                                (quiz.isAnswerKeyPublic || quiz.answerKeyPublic)
+                                                    ? 'border-purple-700 text-purple-300 shadow-sm'
+                                                    : 'border-slate-700 text-slate-400 hover:text-white'
+                                            }`}
+                                            title={(quiz.isAnswerKeyPublic || quiz.answerKeyPublic) ? "Answer key & solutions are RELEASED to students. Click to hide." : "Answer key & solutions are HIDDEN from students. Click to release."}
+                                        >
+                                            <FileText className={`w-4 h-4 ${(quiz.isAnswerKeyPublic || quiz.answerKeyPublic) ? 'text-purple-300' : 'text-slate-500'}`} />
+                                            {(quiz.isAnswerKeyPublic || quiz.answerKeyPublic) ? 'Answer Key: Released' : 'Answer Key: Hidden'}
                                         </button>
 
                                         {/* Hide / Unhide Button */}
@@ -2550,10 +2903,10 @@ const ManageQuizzesTab = ({ quizzes, submissions, activityLogs, onRefresh, admin
 };
 
 // Results & Leaderboard Tab (Dark Theme)
-// Results & Leaderboard Tab (Dark Theme)
 const ResultsTab = ({ submissions, quizzes, activityLogs, onRefresh }) => {
     const [selectedQuiz, setSelectedQuiz] = useState('all');
     const [analyticsQuiz, setAnalyticsQuiz] = useState(null);
+    const [inspectingSub, setInspectingSub] = useState(null);
 
     const handleDeleteSubmission = async (sub) => {
         const confirmDelete = window.confirm(
@@ -2586,6 +2939,15 @@ const ResultsTab = ({ submissions, quizzes, activityLogs, onRefresh }) => {
             console.error("Error resetting submission:", err);
             alert("Failed to reset submission entry: " + (err.message || err));
         }
+    };
+
+    const handleInspectStudentSheet = (sub) => {
+        const targetQuiz = quizzes.find(q => q.id === sub.quizId);
+        if (!targetQuiz) {
+            alert('Quiz details not found for this submission.');
+            return;
+        }
+        setInspectingSub({ sub, quiz: targetQuiz });
     };
 
     const rawFilteredSubmissions = selectedQuiz === 'all'
@@ -2630,7 +2992,7 @@ const ResultsTab = ({ submissions, quizzes, activityLogs, onRefresh }) => {
                             Leaderboard & Results
                         </h2>
                         <p className="text-xs text-slate-400 mt-1">
-                            View top student rankings, inspect individual submissions, or reset an entry to allow a student to reattempt a test.
+                            View top student rankings, inspect individual student answer sheets, or reset an entry to allow a student to reattempt a test.
                         </p>
                     </div>
                     <div className="flex items-center gap-3">
@@ -2661,6 +3023,7 @@ const ResultsTab = ({ submissions, quizzes, activityLogs, onRefresh }) => {
                         const currentQuizObj = quizzes.find(q => q.id === selectedQuiz);
                         if (!currentQuizObj) return null;
                         const isPublic = currentQuizObj.isLeaderboardPublic === true || currentQuizObj.leaderboardPublic === true;
+                        const isAnswerKeyPublic = currentQuizObj.isAnswerKeyPublic === true || currentQuizObj.answerKeyPublic === true;
                         return (
                             <div className="flex items-center gap-2 flex-wrap">
                                 <button
@@ -2692,7 +3055,30 @@ const ResultsTab = ({ submissions, quizzes, activityLogs, onRefresh }) => {
                                     }`}
                                 >
                                     <Trophy className={`w-4 h-4 ${isPublic ? 'text-amber-400' : 'text-slate-500'}`} />
-                                    <span>{isPublic ? '🌐 Leaderboard: Public to Students' : '🔒 Leaderboard: Private (Click to publish)'}</span>
+                                    <span>{isPublic ? '🌐 Leaderboard: Public' : '🔒 Leaderboard: Private'}</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        try {
+                                            await updateDoc(doc(db, 'quizzes', selectedQuiz), {
+                                                isAnswerKeyPublic: !isAnswerKeyPublic
+                                            });
+                                            alert(`🔑 Answer Key & Solutions for "${currentQuizObj.name}" is now ${!isAnswerKeyPublic ? 'RELEASED to students' : 'HIDDEN from students'}!`);
+                                            if (onRefresh) onRefresh();
+                                        } catch (e) {
+                                            alert("Failed to update Answer Key visibility: " + (e.message || e));
+                                        }
+                                    }}
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 border shrink-0 ${
+                                        isAnswerKeyPublic
+                                            ? 'bg-purple-950/90 border-purple-700 text-purple-300 shadow-md'
+                                            : 'bg-slate-900 border-slate-700 text-slate-300 hover:text-white'
+                                    }`}
+                                >
+                                    <FileText className={`w-4 h-4 ${isAnswerKeyPublic ? 'text-purple-300' : 'text-slate-500'}`} />
+                                    <span>{isAnswerKeyPublic ? '🔑 Answer Key: Released' : '🔒 Answer Key: Hidden (Click to release)'}</span>
                                 </button>
                             </div>
                         );
@@ -2729,7 +3115,7 @@ const ResultsTab = ({ submissions, quizzes, activityLogs, onRefresh }) => {
                         <thead className="bg-slate-900 text-slate-300 border-b border-slate-800">
                             <tr>
                                 <th className="px-6 py-4 text-left font-semibold text-xs uppercase tracking-wider">Rank</th>
-                                <th className="px-6 py-4 text-left font-semibold text-xs uppercase tracking-wider">Name</th>
+                                <th className="px-6 py-4 text-left font-semibold text-xs uppercase tracking-wider">Student Name</th>
                                 <th className="px-6 py-4 text-left font-semibold text-xs uppercase tracking-wider">Roll Number</th>
                                 {selectedQuiz === 'all' && (
                                     <th className="px-6 py-4 text-left font-semibold text-xs uppercase tracking-wider">Quiz</th>
@@ -2737,7 +3123,7 @@ const ResultsTab = ({ submissions, quizzes, activityLogs, onRefresh }) => {
                                 <th className="px-6 py-4 text-left font-semibold text-xs uppercase tracking-wider">Score</th>
                                 <th className="px-6 py-4 text-left font-semibold text-xs uppercase tracking-wider">Percentage</th>
                                 <th className="px-6 py-4 text-left font-semibold text-xs uppercase tracking-wider">Submitted At</th>
-                                <th className="px-6 py-4 text-right font-semibold text-xs uppercase tracking-wider">Action</th>
+                                <th className="px-6 py-4 text-right font-semibold text-xs uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-800 bg-slate-900/40">
@@ -2788,15 +3174,27 @@ const ResultsTab = ({ submissions, quizzes, activityLogs, onRefresh }) => {
                                                 {sub.submittedAt?.toDate?.()?.toLocaleString() || 'N/A'}
                                             </td>
                                             <td className="px-6 py-4 text-right">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleDeleteSubmission(sub)}
-                                                    className="px-3 py-1 bg-red-950/80 hover:bg-red-900 text-red-300 border border-red-800/80 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-sm"
-                                                    title="Delete entry to allow student to re-take this quiz"
-                                                >
-                                                    <RotateCcw className="w-3.5 h-3.5" />
-                                                    Reset & Reattempt
-                                                </button>
+                                                <div className="flex items-center justify-end gap-1.5">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleInspectStudentSheet(sub)}
+                                                        className="px-3 py-1 bg-blue-950/80 hover:bg-blue-900 text-blue-300 border border-blue-800/80 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 shadow-sm"
+                                                        title="Inspect student answer sheet"
+                                                    >
+                                                        <Eye className="w-3.5 h-3.5 text-blue-400" />
+                                                        Answer Sheet
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDeleteSubmission(sub)}
+                                                        className="px-3 py-1 bg-red-950/80 hover:bg-red-900 text-red-300 border border-red-800/80 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-sm"
+                                                        title="Delete entry to allow student to re-take this quiz"
+                                                    >
+                                                        <RotateCcw className="w-3.5 h-3.5" />
+                                                        Reset
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     );
@@ -2825,7 +3223,7 @@ const ResultsTab = ({ submissions, quizzes, activityLogs, onRefresh }) => {
                                 )}
                                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Score</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Time</th>
-                                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider">Action</th>
+                                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-800 bg-slate-900/40">
@@ -2856,15 +3254,27 @@ const ResultsTab = ({ submissions, quizzes, activityLogs, onRefresh }) => {
                                                 {sub.submittedAt?.toDate?.()?.toLocaleString() || 'N/A'}
                                             </td>
                                             <td className="px-4 py-3 text-right">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleDeleteSubmission(sub)}
-                                                    className="px-3 py-1 bg-red-950/80 hover:bg-red-900 text-red-300 border border-red-800/80 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-sm"
-                                                    title="Delete entry to allow student to re-take this quiz"
-                                                >
-                                                    <RotateCcw className="w-3.5 h-3.5" />
-                                                    Reset & Reattempt
-                                                </button>
+                                                <div className="flex items-center justify-end gap-1.5">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleInspectStudentSheet(sub)}
+                                                        className="px-3 py-1 bg-blue-950/80 hover:bg-blue-900 text-blue-300 border border-blue-800/80 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 shadow-sm"
+                                                        title="Inspect student answer sheet"
+                                                    >
+                                                        <Eye className="w-3.5 h-3.5 text-blue-400" />
+                                                        Answer Sheet
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDeleteSubmission(sub)}
+                                                        className="px-3 py-1 bg-red-950/80 hover:bg-red-900 text-red-300 border border-red-800/80 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-sm"
+                                                        title="Delete entry to allow student to re-take this quiz"
+                                                    >
+                                                        <RotateCcw className="w-3.5 h-3.5" />
+                                                        Reset
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     );
@@ -2883,6 +3293,15 @@ const ResultsTab = ({ submissions, quizzes, activityLogs, onRefresh }) => {
                     activityLogs={activityLogs}
                     onClose={() => setAnalyticsQuiz(null)}
                     onRefresh={onRefresh}
+                />
+            )}
+
+            {/* STUDENT ANSWER SHEET MODAL */}
+            {inspectingSub && (
+                <StudentAnswerSheetModal
+                    submission={inspectingSub.sub}
+                    quiz={inspectingSub.quiz}
+                    onClose={() => setInspectingSub(null)}
                 />
             )}
         </div>

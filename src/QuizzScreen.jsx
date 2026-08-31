@@ -449,6 +449,173 @@ const LeaderboardPanel = ({ quizId, myUserId, formatSecs }) => {
     );
 };
 
+// Modal for Student Solution Review & Testbook-style Answer Key Inspection
+const StudentSolutionReviewModal = ({ submission, quiz, onClose }) => {
+    const modalRef = useRef(null);
+
+    useEffect(() => {
+        if (modalRef.current) {
+            gsap.fromTo(modalRef.current,
+                { opacity: 0, scale: 0.95, y: 20 },
+                { opacity: 1, scale: 1, y: 0, duration: 0.3, ease: 'power2.out' }
+            );
+        }
+    }, []);
+
+    const marksPerQ = quiz.marksPerQuestion || submission.marksPerQuestion || 4;
+    const totalPossible = (quiz.questions?.length || submission.totalQuestions || 0) * marksPerQ;
+    const pct = totalPossible > 0 ? Math.round((submission.score / totalPossible) * 100) : 0;
+    const timeMins = Math.floor((submission.timeTaken || 0) / 60);
+    const timeSecs = (submission.timeTaken || 0) % 60;
+
+    return (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-xl z-[120] flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+            <div
+                ref={modalRef}
+                className="bg-[#0f172a] border border-slate-700/80 rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-[0_25px_80px_rgba(0,0,0,0.9)] overflow-hidden text-slate-100"
+            >
+                {/* Header */}
+                <div className="p-5 sm:p-6 border-b border-slate-800 bg-[#131b2e]/90 flex items-start justify-between gap-4 shrink-0">
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <span className="px-2.5 py-0.5 bg-purple-950 text-purple-300 border border-purple-800 rounded-full text-[10px] font-extrabold uppercase tracking-wider">
+                                Official Answer Key & Solutions
+                            </span>
+                            <span className="px-2.5 py-0.5 bg-emerald-950 text-emerald-300 border border-emerald-800 rounded-full text-[10px] font-bold">
+                                Released by Administrator
+                            </span>
+                        </div>
+                        <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                            {quiz.name}
+                        </h2>
+                    </div>
+
+                    <button
+                        onClick={onClose}
+                        className="w-9 h-9 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shrink-0"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+
+                {/* Performance Summary Metrics */}
+                <div className="p-5 bg-slate-900/60 border-b border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-3 shrink-0">
+                    <div className="bg-[#131b2e]/90 p-3 rounded-xl border border-slate-800">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Your Score</p>
+                        <p className="text-xl font-black text-emerald-400">{submission.score} <span className="text-xs text-slate-400">/ {totalPossible}</span></p>
+                    </div>
+                    <div className="bg-[#131b2e]/90 p-3 rounded-xl border border-slate-800">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Accuracy %</p>
+                        <p className="text-xl font-black text-blue-400">{pct}%</p>
+                    </div>
+                    <div className="bg-[#131b2e]/90 p-3 rounded-xl border border-slate-800">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Breakdown</p>
+                        <p className="text-xs font-bold text-white mt-1">
+                            <span className="text-emerald-400">✓ {submission.correct || 0}</span> • <span className="text-red-400">✗ {submission.wrong || 0}</span> • <span className="text-slate-400">⚪ {submission.notAttempted || 0}</span>
+                        </p>
+                    </div>
+                    <div className="bg-[#131b2e]/90 p-3 rounded-xl border border-slate-800">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Time Spent</p>
+                        <p className="text-base font-bold text-amber-400 mt-1">{timeMins}m {timeSecs}s</p>
+                    </div>
+                </div>
+
+                {/* Questions & Solutions List */}
+                <div className="p-6 overflow-y-auto space-y-4 flex-1 bg-[#0b0f17]/95">
+                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        Question Paper & Detailed Answer Key ({quiz.questions?.length || 0} Questions)
+                    </h3>
+
+                    <div className="space-y-4">
+                        {quiz.questions?.map((q, qIdx) => {
+                            const studentAnsIdx = submission.answers ? submission.answers[qIdx] : undefined;
+                            const isUnattempted = studentAnsIdx === undefined || studentAnsIdx === null;
+                            const isCorrect = !isUnattempted && studentAnsIdx === q.correctAnswer;
+
+                            return (
+                                <div
+                                    key={qIdx}
+                                    className={`p-4 sm:p-5 rounded-2xl border ${
+                                        isCorrect
+                                            ? 'bg-[#131b2e]/90 border-emerald-900/60'
+                                            : isUnattempted
+                                            ? 'bg-[#131b2e]/70 border-slate-800'
+                                            : 'bg-[#131b2e]/90 border-red-900/60'
+                                    }`}
+                                >
+                                    <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
+                                        <div className="flex items-center gap-2">
+                                            <span className="px-2.5 py-0.5 bg-slate-900 text-blue-400 font-mono text-xs font-bold rounded-lg border border-slate-800">
+                                                Q{qIdx + 1}
+                                            </span>
+                                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                                                isCorrect
+                                                    ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                                                    : isUnattempted
+                                                    ? 'bg-slate-900 text-slate-400 border-slate-700'
+                                                    : 'bg-red-950 text-red-300 border-red-800'
+                                            }`}>
+                                                {isCorrect ? `✅ Correct (+${marksPerQ} pts)` : isUnattempted ? '⚪ Unattempted (0 pts)' : '❌ Incorrect (0 pts)'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <h4 className="text-sm sm:text-base font-bold text-white mb-3 leading-relaxed">
+                                        {q.question}
+                                    </h4>
+
+                                    {q.codeSnippet && (
+                                        <pre className="mb-4 p-3 bg-[#0d1117] rounded-xl text-xs font-mono text-emerald-300 overflow-x-auto border border-slate-800">
+                                            <code>{q.codeSnippet}</code>
+                                        </pre>
+                                    )}
+
+                                    {/* Option List */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                        {q.options?.map((opt, optIdx) => {
+                                            const isSelectedByStudent = studentAnsIdx === optIdx;
+                                            const isOptionCorrect = optIdx === q.correctAnswer;
+
+                                            let style = 'bg-slate-900/80 border-slate-800 text-slate-400';
+                                            if (isOptionCorrect) {
+                                                style = 'bg-emerald-950/90 border-emerald-700 text-emerald-300 font-bold shadow-sm';
+                                            } else if (isSelectedByStudent && !isOptionCorrect) {
+                                                style = 'bg-red-950/90 border-red-700 text-red-300 font-bold';
+                                            }
+
+                                            return (
+                                                <div key={optIdx} className={`p-3 rounded-xl border flex items-center justify-between gap-2 ${style}`}>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-bold">{String.fromCharCode(65 + optIdx)}.</span>
+                                                        <span>{opt}</span>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-1 shrink-0">
+                                                        {isSelectedByStudent && (
+                                                            <span className="text-[10px] bg-blue-900 text-blue-300 px-2 py-0.5 rounded font-bold">
+                                                                Your Answer
+                                                            </span>
+                                                        )}
+                                                        {isOptionCorrect && (
+                                                            <span className="text-[10px] bg-emerald-900 text-emerald-300 px-2 py-0.5 rounded font-bold">
+                                                                Correct Answer
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // Quiz List Component (Matching Login Screen Aesthetic & Rich GSAP Animations)
 const QuizList = ({ user, onLogout }) => {
     const navigate = useNavigate();
@@ -459,6 +626,7 @@ const QuizList = ({ user, onLogout }) => {
     const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'available', 'completed'
     const [sortBy, setSortBy] = useState('latest'); // 'latest', 'marks', 'duration'
     const [showProfilePanel, setShowProfilePanel] = useState(false);
+    const [reviewModalData, setReviewModalData] = useState(null);
     const profilePanelRef = useRef(null);
     
     // GSAP Animation References
@@ -592,9 +760,15 @@ const QuizList = ({ user, onLogout }) => {
             submissionsSnapshot.docs.forEach(doc => {
                 const data = doc.data();
                 submissionsMap[data.quizId] = {
+                    id: doc.id,
                     score: data.score,
                     totalMarks: data.totalMarks,
+                    totalQuestions: data.totalQuestions,
+                    correct: data.correct,
+                    wrong: data.wrong,
+                    notAttempted: data.notAttempted,
                     timeTaken: data.timeTaken ?? null,
+                    answers: data.answers || {},
                     submittedAt: data.submittedAt
                 };
             });
@@ -1128,16 +1302,25 @@ const QuizList = ({ user, onLogout }) => {
                                                 </div>
 
                                                 {isSubmitted ? (
-                                                    <div className="flex flex-col gap-1 items-end">
+                                                    <div className="flex flex-col gap-1.5 items-end">
                                                         <div className="px-4 py-2 bg-emerald-600/90 text-white rounded-2xl text-xs font-bold shadow-sm flex items-center gap-1.5">
                                                             <CheckCircle className="w-3.5 h-3.5" />
                                                             <span>Score: {submissions[quiz.id].score}/{submissions[quiz.id].totalMarks || totalMarks}</span>
                                                         </div>
-                                                        {submissions[quiz.id].timeTaken != null && (
-                                                            <div className="px-3 py-1 bg-slate-800/90 text-slate-300 rounded-xl text-[11px] font-semibold flex items-center gap-1 border border-slate-700/60">
-                                                                <Timer className="w-3 h-3 text-amber-400" />
-                                                                Time: {Math.floor(submissions[quiz.id].timeTaken / 60)}m {submissions[quiz.id].timeTaken % 60}s
-                                                            </div>
+
+                                                        {(quiz.isAnswerKeyPublic === true || quiz.answerKeyPublic === true) ? (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setReviewModalData({ submission: submissions[quiz.id], quiz })}
+                                                                className="px-3.5 py-1.5 bg-purple-950/90 hover:bg-purple-800 border border-purple-700/80 text-purple-200 hover:text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-purple-900/30 cursor-pointer flex items-center gap-1.5"
+                                                            >
+                                                                <FileText className="w-3.5 h-3.5 text-purple-300" />
+                                                                <span>View Solution & Answer Key</span>
+                                                            </button>
+                                                        ) : (
+                                                            <span className="px-2.5 py-1 bg-slate-900/90 text-slate-400 rounded-xl text-[10px] font-semibold border border-slate-800 flex items-center gap-1">
+                                                                <Lock className="w-3 h-3 text-slate-500" /> Answer Key: Admin Pending
+                                                            </span>
                                                         )}
                                                     </div>
                                                 ) : (
@@ -1158,6 +1341,15 @@ const QuizList = ({ user, onLogout }) => {
                     </main>
                 </div>
             </div>
+
+            {/* STUDENT SOLUTION REVIEW MODAL */}
+            {reviewModalData && (
+                <StudentSolutionReviewModal
+                    submission={reviewModalData.submission}
+                    quiz={reviewModalData.quiz}
+                    onClose={() => setReviewModalData(null)}
+                />
+            )}
 
             {/* Bottom spacer */}
             <div className="w-full h-2"></div>
