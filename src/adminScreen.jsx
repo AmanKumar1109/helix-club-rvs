@@ -2404,8 +2404,8 @@ const AdminDashboard = ({ adminUser, onLogout }) => {
                     </div>
                 </nav>
 
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                    <div ref={statsGridRef} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+                    <div ref={statsGridRef} className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
                         <StatsCard
                             icon={Award}
                             title="Total Quizzes"
@@ -2432,8 +2432,8 @@ const AdminDashboard = ({ adminUser, onLogout }) => {
                         />
                     </div>
 
-                    <div className="bg-[#131b2e]/90 rounded-2xl border border-slate-800 p-1.5 mb-6 shadow-md">
-                        <nav className="flex gap-1">
+                    <div className="bg-[#131b2e]/90 rounded-2xl border border-slate-800 p-1.5 mb-6 shadow-md overflow-x-auto">
+                        <nav className="flex gap-1.5 min-w-max">
                             {tabs.map((tab) => {
                                 const Icon = tab.icon;
                                 const isActive = activeTab === tab.id;
@@ -2441,13 +2441,13 @@ const AdminDashboard = ({ adminUser, onLogout }) => {
                                     <button
                                         key={tab.id}
                                         onClick={() => setActiveTab(tab.id)}
-                                        className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${isActive
+                                        className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer shrink-0 whitespace-nowrap ${isActive
                                             ? 'bg-[#4169e2] text-white shadow-lg shadow-blue-600/30'
                                             : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                                             }`}
                                     >
-                                        <Icon className="w-4 h-4" />
-                                        {tab.label}
+                                        <Icon className="w-4 h-4 shrink-0" />
+                                        <span>{tab.label}</span>
                                     </button>
                                 );
                             })}

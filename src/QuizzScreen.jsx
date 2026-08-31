@@ -782,24 +782,30 @@ const QuizList = ({ user, onLogout }) => {
                                     </svg>
                                 </button>
 
-                                {/* Profile Dropdown Panel */}
+                                {/* Profile Dropdown Panel (Responsive on Mobile) */}
                                 {showProfilePanel && (
-                                    <div className="absolute right-0 top-full mt-2 w-72 bg-[#0e1524] border border-slate-700/90 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.85)] z-[100] overflow-hidden">
+                                    <div className="fixed sm:absolute inset-x-4 top-16 sm:top-full sm:inset-x-auto sm:right-0 mt-2 w-auto sm:w-80 bg-[#0e1524] border border-slate-700/90 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.85)] z-[100] overflow-hidden max-w-sm mx-auto sm:mx-0">
                                         {/* Top banner */}
                                         <div className="bg-gradient-to-r from-[#4169e2]/20 to-indigo-600/20 px-5 py-4 border-b border-slate-800">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#4169e2] to-indigo-500 text-white text-lg font-black flex items-center justify-center shadow-lg shadow-blue-600/30 shrink-0">
                                                     {user.fullName?.charAt(0)?.toUpperCase() || 'U'}
                                                 </div>
-                                                <div className="min-w-0">
+                                                <div className="min-w-0 flex-1">
                                                     <p className="text-sm font-black text-white truncate">{user.fullName}</p>
                                                     <p className="text-[11px] text-slate-400 truncate">{user.email}</p>
                                                 </div>
+                                                <button
+                                                    onClick={() => setShowProfilePanel(false)}
+                                                    className="sm:hidden p-1 text-slate-400 hover:text-white"
+                                                >
+                                                    ✕
+                                                </button>
                                             </div>
                                         </div>
 
                                         {/* Details rows */}
-                                        <div className="px-5 py-4 space-y-3">
+                                        <div className="px-5 py-4 space-y-3 max-h-[60vh] overflow-y-auto">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-7 h-7 rounded-lg bg-blue-950/80 border border-blue-800/60 flex items-center justify-center shrink-0">
                                                     <User className="w-3.5 h-3.5 text-blue-400" />
@@ -852,7 +858,7 @@ const QuizList = ({ user, onLogout }) => {
                                                 </div>
                                                 <div>
                                                     <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Quizzes Completed</p>
-                                                    <p className="text-xs text-white font-semibold">{completedCount} / {quizzes.length}</p>
+                                                    <p className="text-xs text-white font-semibold">{completedCount} / {visibleQuizzes.length}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -882,9 +888,31 @@ const QuizList = ({ user, onLogout }) => {
                         </div>
                     </div>
 
-                    {/* Sub-Header Search & Quick Indicators */}
+                    {/* Sub-Header Search & Mobile Navigation Tabs */}
                     <div className="bg-[#0b101c]/80 border-t border-slate-800/80 w-full">
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-4">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                            {/* Mobile Navigation Tabs */}
+                            <div className="flex md:hidden items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs font-bold overflow-x-auto w-full">
+                                <button
+                                    onClick={() => setStatusFilter('all')}
+                                    className={`flex-1 py-1.5 px-2 text-center rounded-lg transition-all cursor-pointer whitespace-nowrap ${statusFilter === 'all' ? 'bg-[#4169e2] text-white shadow-sm' : 'text-slate-400'}`}
+                                >
+                                    All ({visibleQuizzes.length})
+                                </button>
+                                <button
+                                    onClick={() => setStatusFilter('available')}
+                                    className={`flex-1 py-1.5 px-2 text-center rounded-lg transition-all cursor-pointer whitespace-nowrap ${statusFilter === 'available' ? 'bg-[#4169e2] text-white shadow-sm' : 'text-slate-400'}`}
+                                >
+                                    Available ({availableCount})
+                                </button>
+                                <button
+                                    onClick={() => setStatusFilter('completed')}
+                                    className={`flex-1 py-1.5 px-2 text-center rounded-lg transition-all cursor-pointer whitespace-nowrap ${statusFilter === 'completed' ? 'bg-[#4169e2] text-white shadow-sm' : 'text-slate-400'}`}
+                                >
+                                    Submissions ({completedCount})
+                                </button>
+                            </div>
+
                             <div className="relative flex-1 max-w-md">
                                 <input
                                     type="text"
